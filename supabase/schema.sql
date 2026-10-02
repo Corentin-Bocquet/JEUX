@@ -99,9 +99,13 @@ create table if not exists public.jeux_invites (
   room_id    uuid not null references public.jeux_rooms(id) on delete cascade,
   from_user  uuid not null references public.jeux_profiles(id) on delete cascade,
   to_user    uuid not null references public.jeux_profiles(id) on delete cascade,
+  code       text,
+  game       text,
   created_at timestamptz not null default now(),
   unique (room_id, to_user)
 );
+alter table public.jeux_invites add column if not exists code text;
+alter table public.jeux_invites add column if not exists game text;
 alter table public.jeux_invites enable row level security;
 alter table public.jeux_invites replica identity full;
 revoke all on public.jeux_invites from anon, authenticated;
@@ -446,8 +450,8 @@ begin
   if not exists (select 1 from jeux_friends where user_a = least(me,p_to) and user_b = greatest(me,p_to) and status = 'accepted') then
     raise exception 'pas amis';
   end if;
-  insert into jeux_invites (room_id, from_user, to_user) values (p_room, me, p_to)
-  on conflict (room_id, to_user) do update set created_at = now();
+  insert into jeux_invites (room_id, from_user, to_user, code, game) values (p_room, me, p_to, r.code, r.game)
+  on conflict (room_id, to_user) do update set created_at = now(), code = excluded.code, game = excluded.game;
 end $$;
 
 -- ---------------- classement
