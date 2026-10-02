@@ -236,7 +236,7 @@ revoke all on function public.jeux__credit(uuid, text, text, int, int) from publ
 create or replace function public.jeux_solo_reward(p_game text, p_outcome text)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare me uuid := auth.uid(); r public.jeux_profiles; today date := (now() at time zone 'Europe/Paris')::date;
-  gems int; xp int; already int;
+  v_gems int; v_xp int; already int;
 begin
   if p_outcome not in ('win','draw','lose') or p_game !~ '^[a-z0-9_]{2,20}$' then raise exception 'resultat invalide'; end if;
   select * into r from jeux_profiles where id = me for update;
@@ -244,14 +244,14 @@ begin
   if r.last_reward is not null and r.last_reward > now() - interval '25 seconds' then
     return jsonb_build_object('ok', false, 'reason', 'trop_vite', 'profile', to_jsonb(r));
   end if;
-  gems := case p_outcome when 'win' then 12 when 'draw' then 6 else 3 end;
-  xp   := case p_outcome when 'win' then 60 when 'draw' then 35 else 20 end;
+  v_gems := case p_outcome when 'win' then 12 when 'draw' then 6 else 3 end;
+  v_xp   := case p_outcome when 'win' then 60 when 'draw' then 35 else 20 end;
   already := case when r.solo_day = today then r.solo_gems else 0 end;
-  gems := greatest(0, least(gems, 250 - already));
-  update jeux_profiles set solo_day = today, solo_gems = already + gems where id = me;
-  insert into jeux_results (user_id, room_id, game, outcome, gems, xp) values (me, null, p_game, p_outcome, gems, xp);
-  r := jeux__credit(me, p_game, p_outcome, gems, xp);
-  return jsonb_build_object('ok', true, 'gems', gems, 'xp', xp, 'profile', to_jsonb(r));
+  v_gems := greatest(0, least(v_gems, 250 - already));
+  update jeux_profiles set solo_day = today, solo_gems = already + v_gems where id = me;
+  insert into jeux_results (user_id, room_id, game, outcome, gems, xp) values (me, null, p_game, p_outcome, v_gems, v_xp);
+  r := jeux__credit(me, p_game, p_outcome, v_gems, v_xp);
+  return jsonb_build_object('ok', true, 'gems', v_gems, 'xp', v_xp, 'profile', to_jsonb(r));
 end $$;
 
 -- ---------------- salons
@@ -359,7 +359,7 @@ end $$;
 create or replace function public.jeux_room_claim(p_room uuid)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare me uuid := auth.uid(); r public.jeux_rooms; rk jsonb; place int; humans int; outcome text;
-  gems int; xp int; best int; nb_best int; prof public.jeux_profiles;
+  v_gems int; v_xp int; best int; nb_best int; prof public.jeux_profiles;
   tg int[] := array[30,15,8,5]; tx int[] := array[120,70,45,30];
 begin
   select * into r from jeux_rooms where id = p_room;
@@ -376,23 +376,23 @@ begin
   select count(*) into nb_best from jsonb_array_elements(r.state->'result'->'ranking') e where (e->>'rank')::int = 1;
   outcome := case when place = 1 and nb_best = 1 then 'win' when place = 1 then 'draw' else 'lose' end;
   if humans >= 2 then
-    gems := tg[least(place, 4)]; xp := tx[least(place, 4)];
-    if outcome = 'draw' then gems := 15; xp := 70; end if;
+    v_gems := tg[least(place, 4)]; v_xp := tx[least(place, 4)];
+    if outcome = 'draw' then v_gems := 15; v_xp := 70; end if;
   else
     -- un seul humain : tarif solo, avec les memes garde-fous que jeux_solo_reward
-    gems := case outcome when 'win' then 12 when 'draw' then 6 else 3 end;
-    xp   := case outcome when 'win' then 60 when 'draw' then 35 else 20 end;
+    v_gems := case outcome when 'win' then 12 when 'draw' then 6 else 3 end;
+    v_xp   := case outcome when 'win' then 60 when 'draw' then 35 else 20 end;
     select * into prof from jeux_profiles where id = me for update;
-    if prof.last_reward is not null and prof.last_reward > now() - interval '25 seconds' then gems := 0; end if;
+    if prof.last_reward is not null and prof.last_reward > now() - interval '25 seconds' then v_gems := 0; end if;
     best := case when prof.solo_day = (now() at time zone 'Europe/Paris')::date then prof.solo_gems else 0 end;
-    gems := greatest(0, least(gems, 250 - best));
-    update jeux_profiles set solo_day = (now() at time zone 'Europe/Paris')::date, solo_gems = best + gems where id = me;
+    v_gems := greatest(0, least(v_gems, 250 - best));
+    update jeux_profiles set solo_day = (now() at time zone 'Europe/Paris')::date, solo_gems = best + v_gems where id = me;
   end if;
   -- partie expediee en quelques secondes : pas de gemmes
-  if r.updated_at - r.created_at < interval '15 seconds' then gems := 0; end if;
-  insert into jeux_results (user_id, room_id, game, outcome, place, gems, xp) values (me, p_room, r.game, outcome, place, gems, xp);
-  prof := jeux__credit(me, r.game, outcome, gems, xp);
-  return jsonb_build_object('ok', true, 'gems', gems, 'xp', xp, 'outcome', outcome, 'place', place, 'profile', to_jsonb(prof));
+  if r.updated_at - r.created_at < interval '15 seconds' then v_gems := 0; end if;
+  insert into jeux_results (user_id, room_id, game, outcome, place, gems, xp) values (me, p_room, r.game, outcome, place, v_gems, v_xp);
+  prof := jeux__credit(me, r.game, outcome, v_gems, v_xp);
+  return jsonb_build_object('ok', true, 'gems', v_gems, 'xp', v_xp, 'outcome', outcome, 'place', place, 'profile', to_jsonb(prof));
 end $$;
 
 -- ---------------- amis
