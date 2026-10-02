@@ -123,9 +123,12 @@ create table if not exists public.jeux_results (
   place      integer,
   gems       integer not null default 0,
   xp         integer not null default 0,
-  created_at timestamptz not null default now(),
-  unique (user_id, room_id)
+  round      integer not null default 0,
+  created_at timestamptz not null default now()
 );
+alter table public.jeux_results add column if not exists round integer not null default 0;
+alter table public.jeux_results drop constraint if exists jeux_results_user_id_room_id_key;
+create unique index if not exists jeux_results_unique_round on public.jeux_results (user_id, room_id, round);
 create index if not exists jeux_results_week on public.jeux_results (created_at, user_id);
 alter table public.jeux_results enable row level security;
 revoke all on public.jeux_results from anon, authenticated;
@@ -358,7 +361,7 @@ end $$;
 -- gains de fin de partie : lus dans state.result.ranking, une seule fois par joueur et par salon
 create or replace function public.jeux_room_claim(p_room uuid)
 returns jsonb language plpgsql security definer set search_path = public as $$
-declare me uuid := auth.uid(); r public.jeux_rooms; rk jsonb; place int; humans int; outcome text;
+declare me uuid := auth.uid(); r public.jeux_rooms; rk jsonb; place int; humans int; outcome text; v_round int;
   v_gems int; v_xp int; best int; nb_best int; prof public.jeux_profiles;
   tg int[] := array[30,15,8,5]; tx int[] := array[120,70,45,30];
 begin
@@ -366,7 +369,8 @@ begin
   if not found then raise exception 'salon introuvable'; end if;
   if not jeux__is_member(r.players, me) then raise exception 'pas dans ce salon'; end if;
   if r.status <> 'done' then raise exception 'partie pas finie'; end if;
-  if exists (select 1 from jeux_results where user_id = me and room_id = p_room) then
+  v_round := coalesce((r.state->>'round')::int, 0);
+  if exists (select 1 from jeux_results where user_id = me and room_id = p_room and round = v_round) then
     return jsonb_build_object('ok', false, 'reason', 'deja');
   end if;
   select e into rk from jsonb_array_elements(r.state->'result'->'ranking') e where e->>'id' = me::text;
@@ -388,9 +392,10 @@ begin
     v_gems := greatest(0, least(v_gems, 250 - best));
     update jeux_profiles set solo_day = (now() at time zone 'Europe/Paris')::date, solo_gems = best + v_gems where id = me;
   end if;
-  -- partie expediee en quelques secondes : pas de gemmes
-  if r.updated_at - r.created_at < interval '15 seconds' then v_gems := 0; end if;
-  insert into jeux_results (user_id, room_id, game, outcome, place, gems, xp) values (me, p_room, r.game, outcome, place, v_gems, v_xp);
+  -- deux gains a moins de 10 s d intervalle : pas de gemmes (anti-triche)
+  select * into prof from jeux_profiles where id = me;
+  if prof.last_reward is not null and prof.last_reward > now() - interval '10 seconds' then v_gems := 0; end if;
+  insert into jeux_results (user_id, room_id, game, outcome, place, gems, xp, round) values (me, p_room, r.game, outcome, place, v_gems, v_xp, v_round);
   prof := jeux__credit(me, r.game, outcome, v_gems, v_xp);
   return jsonb_build_object('ok', true, 'gems', v_gems, 'xp', v_xp, 'outcome', outcome, 'place', place, 'profile', to_jsonb(prof));
 end $$;

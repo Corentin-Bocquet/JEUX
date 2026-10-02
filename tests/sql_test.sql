@@ -61,11 +61,11 @@ begin
         jsonb_build_object('result', jsonb_build_object('ranking', jsonb_build_array(
           jsonb_build_object('id', b::text, 'rank', 1), jsonb_build_object('id', a::text, 'rank', 2))))));
   assert (r->>'ok')::boolean, 'fin de partie';
-  update jeux_rooms set created_at = now() - interval '5 minutes' where id = room.id;
   r := jeux_room_claim(room.id);
   assert (r->>'gems')::int = 30 and r->>'outcome' = 'win', 'gain vainqueur ' || r::text;
   r := jeux_room_claim(room.id); assert not (r->>'ok')::boolean, 'pas de double gain';
   perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
+  update jeux_profiles set last_reward = null where id = a;
   r := jeux_room_claim(room.id);
   assert (r->>'gems')::int = 15 and r->>'outcome' = 'lose', 'gain second ' || r::text;
   -- classement amis
