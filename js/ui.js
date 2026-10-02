@@ -1,6 +1,12 @@
 // Briques d'interface : création d'éléments, icônes verre liquide, toasts,
 // fenêtres, sons et confettis. Aucune dépendance.
 
+// replaceChildren et append ignorent les valeurs vides (sinon le navigateur écrit « null »)
+for (const m of ["replaceChildren", "append"]) {
+  const orig = Element.prototype[m];
+  Element.prototype[m] = function (...kids) { return orig.apply(this, kids.flat(Infinity).filter((k) => k != null && k !== false && k !== "")); };
+}
+
 export function h(tag, props, ...kids) {
   const el = document.createElement(tag);
   if (props) for (const [k, v] of Object.entries(props)) {
@@ -206,6 +212,15 @@ export function countUp(el, from, to, ms = 900) {
 }
 
 export function copy(text) {
-  try { navigator.clipboard.writeText(text); toast("Copié !", "ok"); }
-  catch { toast(text); }
+  const fallback = () => {
+    const t = document.createElement("textarea");
+    t.value = text; t.style.position = "fixed"; t.style.opacity = "0";
+    document.body.append(t); t.select();
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch {}
+    t.remove();
+    toast(ok ? "Copié !" : text, ok ? "ok" : "");
+  };
+  try { navigator.clipboard.writeText(text).then(() => toast("Copié !", "ok"), fallback); }
+  catch { fallback(); }
 }

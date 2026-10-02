@@ -289,7 +289,7 @@ main.view.full { padding: 0; overflow: hidden; display: flex; flex-direction: co
 .seat .nm { font-size: 13px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .seat.emptyseat { border: 2px dashed var(--line); color: var(--dim2); background: transparent; }
 .seat .kick { position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; }
-.seat .host { position: absolute; top: 6px; left: 8px; font-size: 14px; }
+.seat .host { position: absolute; top: 6px; left: 8px; background: var(--gold); color: #4A3500; }
 
 /* ---------- écran de jeu ---------- */
 .gbar { display: flex; align-items: center; gap: 8px; padding: calc(var(--safe-t) + 8px) 10px 8px; position: relative; z-index: 5; }
