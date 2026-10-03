@@ -1,7 +1,7 @@
 // Statistiques personnelles : chiffres clés, séries, activité, jeux, records, rivaux, historique.
 import { h, tile, fmt, sfx, gem } from "../ui.js";
 import { avatarHTML } from "../avatar.js";
-import { GAMES, gameInfo } from "../games/index.js";
+import { VISIBLE as GAMES, gameInfo } from "../games/index.js";
 import { openGame } from "./home.js";
 import { DAYS, SLOTS, toRow, dur, dayKey, pct, ago, compute } from "../statsCalc.js";
 

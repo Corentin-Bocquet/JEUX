@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { compute, toRow, dur, pct } from "../js/statsCalc.js";
 import { restore, modeOf, defaultsOf } from "../js/prefs.js";
-import { GAMES, loadGame } from "../js/games/index.js";
+import { VISIBLE as GAMES, loadGame } from "../js/games/index.js";
 
 const T = Date.UTC(2026, 9, 3, 10); // un samedi
 const row = (game, outcome, at, extra = {}) => toRow([game, outcome, extra.place ?? null, extra.gems ?? 10, extra.xp ?? 50, extra.score ?? null, extra.dur ?? 60, at, extra.humans ?? 1, extra.mode ?? null]);

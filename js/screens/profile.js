@@ -2,7 +2,7 @@
 import { h, icon, toast, sfx, sheet, prefs, fmt, confirmBox, tile } from "../ui.js";
 import { mascotSVG, avatarHTML } from "../avatar.js";
 import { levelOf } from "../catalog.js";
-import { GAMES } from "../games/index.js";
+import { VISIBLE as GAMES } from "../games/index.js";
 import { theme } from "../app.js";
 
 export function render(A, main) {

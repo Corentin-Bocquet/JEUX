@@ -1,7 +1,7 @@
 // Accueil : salut, coffre du jour, code de salon, invitations, parties en cours, jeux.
 import { h, tile, icon, gem, toast, sfx, sheet, confetti, fmt, buzz } from "../ui.js";
 import { mascotSVG } from "../avatar.js";
-import { GAMES, CATS, gameInfo } from "../games/index.js";
+import { VISIBLE as GAMES, CATS, gameInfo } from "../games/index.js";
 import { gameOptions, restore, picker, carousel, modeOf } from "./settings.js";
 import { pickPlayers, sendInvites } from "./invite.js";
 import { makeBot } from "../rooms.js";
@@ -9,7 +9,9 @@ import { REWARDS } from "../catalog.js";
 
 let cat = "Tous";
 // illustrations facultatives : ajouter l'identifiant du jeu ici après avoir déposé assets/covers/<id>.webp
-const COVERS = ["poker", "blackjack", "huit", "bowling", "sudoku", "fleches", "motus", "motsmeles", "yams", "puissance4", "dames", "bataille"];
+// jeux sans illustration (planche 6 à recevoir) : tuile d'icône à la place
+const NO_COVER = new Set(["espion", "agents", "celebrites", "interdits", "dessine", "actionverite", "jamais", "susceptible", "tupreferes"]);
+const COVERS = GAMES.map((g) => g.id).filter((id) => !NO_COVER.has(id));
 const coverUrl = (id) => (COVERS.includes(id) ? `assets/covers/${id}.webp` : "");
 
 export function render(A, main) {
@@ -80,7 +82,7 @@ export function render(A, main) {
       h("div", { class: "shelf" }, top.map((g) => miniCard(A, g)))] : []));
   };
   const drawGrid = () => {
-    chips.replaceChildren(...CATS.map((c) => h("button", { class: "chip" + (c === cat ? " on" : "") + (CAT_IMG[c] ? " img" : ""), role: "tab", "aria-selected": c === cat ? "true" : "false", onclick: () => { cat = c; sfx.tap(); drawGrid(); } },
+    chips.replaceChildren(...CATS.filter((c) => c === "Tous" || GAMES.some((g) => g.cat === c)).map((c) => h("button", { class: "chip" + (c === cat ? " on" : "") + (CAT_IMG[c] ? " img" : ""), role: "tab", "aria-selected": c === cat ? "true" : "false", onclick: () => { cat = c; sfx.tap(); drawGrid(); } },
       CAT_IMG[c] ? h("img", { src: `assets/cats/${CAT_IMG[c]}.webp`, alt: "", width: 22, height: 22 }) : null, c)));
     sortSel.replaceChildren(...SORTS.map(([k, t]) => h("button", { class: "chip small" + (k === sort ? " on" : ""), onclick: () => { sort = k; sfx.tap(); drawGrid(); } }, t)));
     const q = norm(query.trim());
