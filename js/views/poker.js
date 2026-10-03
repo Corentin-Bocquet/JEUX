@@ -34,7 +34,7 @@ export function mount(root, ctx0) {
     table.append(h("div", { class: "pk-center" },
       h("div", { class: "cards-row", html: [0, 1, 2, 3, 4].map((i) => (board[i] ? cardHTML(board[i]) : `<div class="pcard slot"></div>`)).join("") }),
       h("div", { class: "pk-pot" }, h("i", { class: "chipdot" }), banner ? `Pot gagné` : `Pot ${fmt(potTotal(s))}`),
-      h("div", { class: "small pk-blinds" }, `Blinds ${s.sb}/${s.bb} · main ${s.handNo}/${s.maxHands}`)));
+      h("div", { class: "small pk-blinds" }, `Blinds ${s.sb}/${s.bb}${s.blindUp === 0 ? " fixes" : ""} · main ${s.handNo}/${s.maxHands}`)));
     s.order.forEach((id, k) => {
       const rel = (k - meIdx + n) % n;
       const th = (rel / n) * Math.PI * 2;

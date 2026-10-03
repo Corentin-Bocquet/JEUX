@@ -82,8 +82,11 @@ export function mount(root, ctx0) {
     if (found !== lastFound) { if (lastFound || found) (s.last && s.last.id === c.me ? c.sfx.ok() : c.sfx.card()); lastFound = found; }
     gridEl.style.gridTemplateColumns = `repeat(${s.size}, 1fr)`;
     if (gridEl.childElementCount !== s.size * s.size) gridEl.replaceChildren(...s.grid.split("").map((ch) => h("span", { class: "mm-cell" }, ch)));
-    head.replaceChildren(h("span", { class: "dim" }, `Thème : ${s.theme}`), h("span", null, `${found} / ${s.words.length} mots`));
-    list.replaceChildren(...s.words.map((w) => h("span", { class: "mm-word" + (w.by ? " done" : ""), style: w.by ? `--wc:${COLORS[s.ids.indexOf(w.by) % COLORS.length]}` : null, title: w.by ? nameOf(c, w.by) : "" }, w.w)));
+    const sens = s.diag === false ? (s.back === false ? " · à l'endroit, sans diagonales" : " · sans diagonales") : s.back === false ? " · à l'endroit" : "";
+    head.replaceChildren(h("span", { class: "dim" }, `Thème : ${s.theme}${sens}`), h("span", null, `${found} / ${s.words.length} mots`));
+    // mode initiales : seuls la première lettre et le nombre de lettres sont visibles
+    const label = (w) => (w.by || s.list !== "hint" ? w.w : w.w[0] + " " + "_ ".repeat(w.w.length - 1).trim());
+    list.replaceChildren(...s.words.map((w) => h("span", { class: "mm-word" + (w.by ? " done" : ""), style: w.by ? `--wc:${COLORS[s.ids.indexOf(w.by) % COLORS.length]}` : null, title: w.by ? nameOf(c, w.by) : `${w.w.length} lettres`, "aria-label": w.by ? w.w : `Mot de ${w.w.length} lettres en ${w.w[0]}` }, label(w))));
     drawOverlay();
   }
   update(ctx0);

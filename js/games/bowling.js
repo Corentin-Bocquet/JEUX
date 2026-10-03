@@ -1,4 +1,4 @@
-import { fail, rankByScore } from "../engine.js";
+import { fail, rankByScore, rng as mkRng } from "../engine.js";
 
 export const meta = {
   id: "bowling", name: "Bowling", cat: "Adresse", min: 1, max: 6, turnTime: 40,
@@ -6,8 +6,43 @@ export const meta = {
   rules: ["Fais glisser la boule pour la placer, puis lance-la d'un geste vers le haut.",
     "Plus le geste est rapide, plus la boule va vite. Un geste courbé lui donne de l'effet.",
     "Strike : 10 quilles d'un coup (bonus des 2 lancers suivants). Spare : 10 en deux (bonus du suivant).",
-    "10 frames (ou 5 en partie rapide). Le plus gros score gagne."],
+    "10 frames par défaut. Le plus gros score gagne.",
+    "Options : nombre de frames, bumpers (pas de rigole, la boule rebondit), vent qui pousse la boule et état de la piste (plus ou moins d'effet)."],
 };
+
+// ------------------------------------------------ réglages
+export const options = [
+  { key: "frames", label: "Frames", icon: "🎳",
+    values: [[3, "3", "Éclair"], [5, "5", "Rapide"], [10, "10", "Complète"]], def: 10 },
+  { key: "bumpers", label: "Bumpers", icon: "🛡️",
+    values: [[false, "Non", "Rigoles ouvertes"], [true, "Oui", "Pas de rigole"]], def: false },
+  { key: "wind", label: "Vent", icon: "🌬️",
+    values: [[0, "Aucun"], [1, "Brise", "Léger écart"], [2, "Tempête", "Gros écart"]], def: 0 },
+  { key: "oil", label: "Piste", icon: "🛢️",
+    values: [["normale", "Normale"], ["seche", "Sèche", "Beaucoup d'effet"], ["huilee", "Huilée", "Presque droit"]], def: "normale" },
+];
+export const modes = [
+  { id: "classique", name: "Classique", emoji: "🎳", desc: "10 frames, piste normale, sans vent.", set: { frames: 10, bumpers: false, wind: 0, oil: "normale" } },
+  { id: "enfants", name: "Bumpers", emoji: "🛡️", desc: "5 frames, la boule rebondit sur les bords.", set: { frames: 5, bumpers: true, wind: 0, oil: "normale" } },
+  { id: "tempete", name: "Tempête", emoji: "🌪️", desc: "Vent fort et piste sèche : vise juste !", set: { frames: 10, bumpers: false, wind: 2, oil: "seche" } },
+  { id: "eclair", name: "Éclair", emoji: "⚡", desc: "3 frames sur piste huilée, avec une brise.", set: { frames: 3, bumpers: false, wind: 1, oil: "huilee" } },
+];
+// valeur d'un réglage, ou le défaut si absente ou invalide
+export function opt(settings, key) {
+  const o = options.find((x) => x.key === key);
+  const v = settings ? settings[key] : undefined;
+  const hit = o.values.find((x) => x[0] === v || (v != null && String(x[0]) === String(v)));
+  return hit ? hit[0] : o.def;
+}
+export const OIL = { normale: 1, seche: 1.7, huilee: 0.45 };
+const WIND = { 1: [0.06, 0.18], 2: [0.16, 0.32] };
+// force du vent (signée) pour le prochain lancer
+export function drawWind(level, r) {
+  const w = WIND[level];
+  if (!w) return 0;
+  const f = w[0] + r.next() * (w[1] - w[0]);
+  return Math.round((r.next() < 0.5 ? -f : f) * 100) / 100;
+}
 
 // ------------------------------------------------ physique (déterministe : + - * / et racine seulement)
 export const LANE = { L: 16, half: 0.5, rb: 0.105, rp: 0.0575, start: 0.4 };
@@ -30,8 +65,10 @@ export function clampThrow(t) {
 }
 
 // standing : tableau de 10 booléens. Retourne { down: [indices], frames? }
-export function simulate(thr, standing, record = false) {
+// env : { bump: rebond sur les bords, wind: poussée latérale, oil: multiplicateur d'effet }
+export function simulate(thr, standing, record = false, env = {}) {
   const t = clampThrow(thr);
+  const bump = !!(env && env.bump), wind = (env && +env.wind) || 0, oil = (env && +env.oil) || 1;
   const dt = 1 / 240;
   const { L, half, rb, rp } = LANE;
   const ball = { x: t.x, y: LANE.start, vx: t.vx, vy: t.vy, gutter: false };
@@ -42,9 +79,16 @@ export function simulate(thr, standing, record = false) {
     // effet : la boule accroche quand elle sort de la zone huilée
     if (!ball.gutter) {
       const ramp = ball.y < L * 0.45 ? 0 : ball.y > L ? 1 : (ball.y - L * 0.45) / (L * 0.55);
-      ball.vx += t.spin * 0.9 * ramp * dt;
+      ball.vx += t.spin * 0.9 * oil * ramp * dt;
+      if (ball.y < L) ball.vx += wind * dt;
     }
     ball.x += ball.vx * dt; ball.y += ball.vy * dt;
+    if (bump && !ball.gutter && ball.y < L - 0.2) {
+      // bumpers : la boule rebondit sur le bord au lieu de tomber dans la rigole
+      const lim = half - rb;
+      if (ball.x < -lim) { ball.x = -lim; ball.vx = Math.abs(ball.vx) * 0.5; }
+      else if (ball.x > lim) { ball.x = lim; ball.vx = -Math.abs(ball.vx) * 0.5; }
+    }
     if (!ball.gutter && (ball.x < -half || ball.x > half) && ball.y < L - 0.2) {
       ball.gutter = true; ball.x = ball.x < 0 ? -half - rb : half + rb; ball.vx = 0;
     }
@@ -148,13 +192,17 @@ export function totalScore(rolls, nFrames) {
 }
 
 // ------------------------------------------------ partie
-export function setup(players, settings) {
-  const n = settings.frames === 5 ? 5 : 10;
+export function setup(players, settings, rng) {
+  const n = opt(settings, "frames");
+  const windLvl = opt(settings, "wind");
   const rolls = {};
   players.forEach((p) => (rolls[p.id] = []));
   return { order: players.map((p) => p.id), n, cur: 0, frame: 0, ball: 0, standing: Array(10).fill(true), rolls,
-    marks: {}, last: null, done: false, level: settings.level || 2 };
+    marks: {}, last: null, done: false, level: settings.level || 2,
+    bump: opt(settings, "bumpers"), windLvl, wind: rng ? drawWind(windLvl, rng) : 0, oil: OIL[opt(settings, "oil")] };
 }
+// conditions du prochain lancer (les anciennes parties n'ont pas ces champs)
+export const envOf = (s) => ({ bump: !!s.bump, wind: s.wind || 0, oil: s.oil || 1 });
 
 export function toAct(s) { return s.done ? [] : [s.order[s.cur]]; }
 
@@ -171,7 +219,8 @@ export function reduce(s, pid, a) {
   if (a.type !== "throw") fail("Action inconnue");
   const thr = clampThrow(a);
   const before = s.standing.slice();
-  const { down } = simulate(thr, before);
+  const env = envOf(s);
+  const { down } = simulate(thr, before, false, env);
   const n = down.length;
   s.rolls[pid].push(n);
   down.forEach((i) => (s.standing[i] = false));
@@ -183,7 +232,8 @@ export function reduce(s, pid, a) {
   else if (last && s.ball === 1 && leftNow === 0) mark = before.filter(Boolean).length === 10 ? "strike" : "spare";
   else if (last && s.ball === 2 && n === 10 && before.filter(Boolean).length === 10) mark = "strike";
   else if (n === 0) mark = s.ball === 0 || !last ? "zero" : "zero";
-  s.last = { id: pid, thr, before, down, frame: s.frame, ball: s.ball, mark, seq: (s.last ? s.last.seq : 0) + 1 };
+  s.last = { id: pid, thr, before, down, env, frame: s.frame, ball: s.ball, mark, seq: (s.last ? s.last.seq : 0) + 1 };
+  if (s.windLvl) s.wind = drawWind(s.windLvl, mkRng(a.seed || s.last.seq * 7919));
   if (!last) {
     if (s.ball === 0 && n === 10) nextTurn(s);
     else if (s.ball === 1) nextTurn(s);
@@ -210,6 +260,7 @@ export function result(s) {
 // ------------------------------------------------ robot : essaie plusieurs lancers et garde le meilleur
 export function bot(s, pid, rng) {
   const standing = s.standing;
+  const env = envOf(s);
   const lvl = s.level || 2;
   const tries = [4, 10, 18][lvl - 1] || 10;
   let best = null, bestN = -1;
@@ -220,10 +271,11 @@ export function bot(s, pid, rng) {
     // vise une zone de quilles encore debout
     const targets = PINS.filter((_, i) => standing[i]);
     const tgt = targets.length ? rng.pick(targets) : PINS[0];
-    const curve = spin * 0.9 * ((LANE.L * 0.55) / vy) ** 2 * 0.5;
+    const tt = (tgt[1] - LANE.start) / vy;
+    const curve = spin * 0.9 * env.oil * ((LANE.L * 0.55) / vy) ** 2 * 0.5 + env.wind * tt * tt * 0.5;
     const vx = ((tgt[0] - x - curve) / (tgt[1] - LANE.start)) * vy;
     const thr = { x, vx, vy, spin };
-    const n = simulate(thr, standing).down.length;
+    const n = simulate(thr, standing, false, env).down.length;
     if (n > bestN) { bestN = n; best = thr; }
   }
   const err = [0.05, 0.022, 0.008][lvl - 1] || 0.02;

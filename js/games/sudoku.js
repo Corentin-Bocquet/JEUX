@@ -6,8 +6,32 @@ export const meta = {
   rules: ["Tout le monde remplit la même grille en même temps.",
     "Chaque chiffre de 1 à 9 apparaît une fois par ligne, par colonne et par carré.",
     "Bon chiffre : +1 point, et +3 si tu complètes une ligne, une colonne ou un carré.",
-    "Mauvais chiffre : -1 point. Le meilleur score à la fin de la grille gagne."],
+    "Mauvais chiffre : -1 point. Le meilleur score à la fin de la grille gagne.",
+    "Options : difficulté (cases déjà remplies), pénalité par erreur et coups de pouce qui révèlent une case (sans points)."],
 };
+
+// ------------------------------------------------ réglages
+export const options = [
+  { key: "diff", label: "Difficulté", icon: "🧩",
+    values: [[1, "Facile", "40 chiffres donnés"], [2, "Moyen", "32 chiffres donnés"], [3, "Difficile", "26 chiffres donnés"]], def: 2 },
+  { key: "penalty", label: "Pénalité", icon: "❌",
+    values: [[0, "Aucune", "Erreur gratuite"], [1, "-1", "Par erreur"], [3, "-3", "Par erreur"]], def: 1 },
+  { key: "hints", label: "Coups de pouce", icon: "💡",
+    values: [[0, "Aucun"], [3, "3", "Par joueur"], [6, "6", "Par joueur"]], def: 0 },
+];
+export const modes = [
+  { id: "classique", name: "Classique", emoji: "🧩", desc: "Grille moyenne, -1 par erreur, sans aide.", set: { diff: 2, penalty: 1, hints: 0 } },
+  { id: "decouverte", name: "Découverte", emoji: "🌱", desc: "Grille facile, erreurs gratuites, 3 coups de pouce.", set: { diff: 1, penalty: 0, hints: 3 } },
+  { id: "expert", name: "Expert", emoji: "🧠", desc: "Grille difficile, -3 par erreur, aucune aide.", set: { diff: 3, penalty: 3, hints: 0 } },
+  { id: "entraide", name: "Défi aidé", emoji: "💡", desc: "Grille difficile avec 6 coups de pouce.", set: { diff: 3, penalty: 1, hints: 6 } },
+];
+// valeur d'un réglage, ou le défaut si absente ou invalide
+export function opt(settings, key) {
+  const o = options.find((x) => x.key === key);
+  const v = settings ? settings[key] : undefined;
+  const hit = o.values.find((x) => x[0] === v || (v != null && String(x[0]) === String(v)));
+  return hit ? hit[0] : o.def;
+}
 
 const ROW = (i) => Math.floor(i / 9), COL = (i) => i % 9, BOX = (i) => Math.floor(ROW(i) / 3) * 3 + Math.floor(COL(i) / 3);
 export const PEERS = Array.from({ length: 81 }, (_, i) => {
@@ -80,25 +104,39 @@ export function generate(rng, level = 2) {
   return { puz, sol };
 }
 
+// level : niveau des robots (réglage global) ; diff : difficulté de la grille
 export function setup(players, settings, rng) {
-  const level = settings.level || 2;
-  const { puz, sol } = generate(rng, level);
-  const scores = {}, errors = {};
-  players.forEach((p) => { scores[p.id] = 0; errors[p.id] = 0; });
+  const diff = opt(settings, "diff"), nh = opt(settings, "hints");
+  const { puz, sol } = generate(rng, diff);
+  const scores = {}, errors = {}, hints = {};
+  players.forEach((p) => { scores[p.id] = 0; errors[p.id] = 0; hints[p.id] = nh; });
   return { ids: players.map((p) => p.id), puz, sol, grid: puz.slice(), owner: puz.map((v) => (v ? "" : null)),
-    scores, errors, level, last: null, done: false };
+    scores, errors, hints, hintsMax: nh, level: settings.level || 2, diff, penalty: opt(settings, "penalty"), last: null, done: false };
 }
+// case révélée par un coup de pouce : owner "?" (personne ne marque)
+export const HINT = "?";
 
 export function toAct(s) { return s.done ? [] : s.ids.slice(); }
 
 export function reduce(s, pid, a) {
   if (!s.ids.includes(pid)) fail("Tu ne joues pas");
+  if (a.type === "hint") {
+    const i = a.cell | 0;
+    if (i < 0 || i > 80) fail("Case invalide");
+    if (s.grid[i]) fail("Case déjà remplie");
+    if (!s.hints || !(s.hints[pid] > 0)) fail("Plus de coup de pouce");
+    s.hints[pid]--;
+    s.grid[i] = s.sol[i]; s.owner[i] = HINT;
+    s.last = { id: pid, cell: i, val: s.sol[i], ok: true, bonus: 0, hint: true };
+    if (s.grid.every((x) => x)) s.done = true;
+    return s;
+  }
   if (a.type !== "place") fail("Action inconnue");
   const i = a.cell | 0, v = a.val | 0;
   if (i < 0 || i > 80 || v < 1 || v > 9) fail("Coup invalide");
   if (s.grid[i]) fail("Case déjà remplie");
   if (s.sol[i] !== v) {
-    s.scores[pid] -= 1; s.errors[pid]++;
+    s.scores[pid] -= s.penalty ?? 1; s.errors[pid]++;
     s.last = { id: pid, cell: i, val: v, ok: false };
     return s;
   }
@@ -126,6 +164,8 @@ export function bot(s, pid, rng) {
     const c = candidates(s.grid, i).length;
     if (c < n) { n = c; best = i; if (c === 1) break; }
   }
+  // coup de pouce disponible : le robot s'en sert parfois, surtout sur une case difficile
+  if (s.hints && s.hints[pid] > 0 && rng.next() < (n >= 2 ? 0.5 : 0.08)) return { type: "hint", cell: best };
   let val = s.sol[best];
   if (s.level === 1 && rng.next() < 0.15) val = (val % 9) + 1;
   return { type: "place", cell: best, val };

@@ -8,8 +8,39 @@ export const meta = {
     "Le 8 se pose sur tout et change la couleur.",
     "Le 2 fait piocher 2 cartes au suivant, le Valet le fait passer son tour, l'As inverse le sens.",
     "Si tu ne peux pas jouer, pioche une carte : tu peux la poser si elle va, sinon tu passes.",
-    "Le premier sans carte gagne, les autres sont classés selon les points qui leur restent."],
+    "Le premier sans carte gagne, les autres sont classés selon les points qui leur restent.",
+    "En course aux points, chacun encaisse les points de sa main à chaque manche (8 : 50, figures : 10, As : 1) : dès qu'un joueur atteint le seuil, le moins chargé gagne.",
+    "Options : cartes en main au départ, une manche ou course aux points, effets des cartes spéciales."],
 };
+
+// ------------------------------------------------ réglages
+export const options = [
+  { key: "cards", label: "Cartes en main", icon: "🖐️",
+    values: [[0, "Auto", "7 à deux, sinon 5"], [5, "5"], [7, "7"], [10, "10", "Longue partie"]], def: 0 },
+  { key: "target", label: "Fin de partie", icon: "🏁",
+    values: [[0, "1 manche", "Premier vidé"], [100, "100 pts", "Course courte"], [200, "200 pts", "Course longue"]], def: 0 },
+  { key: "specials", label: "Cartes spéciales", icon: "✨",
+    values: [[true, "Activées", "2, Valet, As"], [false, "Désactivées", "Seul le 8 compte"]], def: true },
+];
+export const modes = [
+  { id: "classique", name: "Classique", emoji: "🎴", desc: "Une manche, cartes spéciales actives : le premier vidé gagne.",
+    set: { cards: 0, target: 0, specials: true } },
+  { id: "course", name: "Course à 100", emoji: "🏁", desc: "Plusieurs manches : tes cartes restantes comptent contre toi. Le moins chargé gagne.",
+    set: { cards: 0, target: 100, specials: true } },
+  { id: "grossemain", name: "Grosse main", emoji: "🗂️", desc: "10 cartes chacun au départ : il va falloir s'accrocher.",
+    set: { cards: 10, target: 0, specials: true } },
+  { id: "zen", name: "Tranquille", emoji: "🍃", desc: "Pas de pioche forcée ni de tour sauté : seul le 8 change la couleur.",
+    set: { cards: 5, target: 0, specials: false } },
+];
+export function opt(settings, key) {
+  const o = options.find((x) => x.key === key);
+  const v = settings ? settings[key] : undefined;
+  const hit = o.values.find((x) => String(x[0]) === String(v));
+  return hit ? hit[0] : o.def;
+}
+const SPECIAL = ["2", "J", "A"];
+// les anciennes parties n'ont pas le champ : effets activés
+const specialsOn = (s) => s.specials !== false;
 
 export const points = (c) => {
   const r = rankOf(c);
@@ -19,17 +50,50 @@ export const points = (c) => {
   return +r;
 };
 
-export function setup(players, settings, rng) {
-  const order = rng.shuffle(players.map((p) => p.id));
+// cartes distribuées : jamais plus que ce que le paquet permet (il reste au moins 12 cartes)
+export function handSize(nPlayers, cards) {
+  const want = cards > 0 ? cards : nPlayers === 2 ? 7 : 5;
+  return Math.max(1, Math.min(want, Math.floor((52 - 12) / nPlayers)));
+}
+
+function dealRound(s, rng) {
   let pile = rng.shuffle(deck());
   const hands = {};
-  const n = order.length === 2 ? 7 : 5;
-  for (const id of order) hands[id] = pile.splice(0, n);
+  const n = handSize(s.order.length, s.cards || 0);
+  // le joueur qui commence tourne à chaque manche
+  for (let k = 0; k < s.order.length; k++) { const id = s.order[(s.first + k) % s.order.length]; hands[id] = pile.splice(0, n); }
   // la première carte retournée n'est pas spéciale
-  let i = pile.findIndex((c) => !["8", "2", "J", "A"].includes(rankOf(c)));
+  const i = pile.findIndex((c) => !["8", ...SPECIAL].includes(rankOf(c)));
   const top = pile.splice(i, 1)[0];
-  return { order, hands, pile, discard: [top], suit: suitOf(top), cur: 0, dir: 1, drew: false,
-    finished: [], log: null, winner: null };
+  Object.assign(s, { hands, pile, discard: [top], suit: suitOf(top), cur: s.first, dir: 1, drew: false, stuck: 0 });
+}
+
+export function setup(players, settings, rng) {
+  const order = rng.shuffle(players.map((p) => p.id));
+  const s = { order, hands: {}, pile: [], discard: [], suit: "S", cur: 0, dir: 1, drew: false,
+    finished: [], log: null, winner: null,
+    cards: opt(settings, "cards"), target: opt(settings, "target"), specials: opt(settings, "specials"),
+    manche: 1, first: 0, scores: Object.fromEntries(order.map((id) => [id, 0])), lastRound: null };
+  dealRound(s, rng);
+  return s;
+}
+
+const handPts = (s, id) => s.hands[id].reduce((t, c) => t + points(c), 0);
+
+// fin de manche : partie unique, ou course aux points sur plusieurs manches
+function endRound(s, winner, seed) {
+  if (!s.target) { s.winner = winner; return; }
+  const got = {};
+  for (const id of s.order) { got[id] = handPts(s, id); s.scores[id] += got[id]; }
+  s.lastRound = { manche: s.manche, winner, got };
+  if (s.order.some((id) => s.scores[id] >= s.target)) {
+    // le moins chargé gagne ; à égalité, celui qui a remporté la dernière manche
+    s.winner = s.order.slice().sort((x, y) => s.scores[x] - s.scores[y] || (x === winner ? -1 : y === winner ? 1 : 0))[0];
+    return;
+  }
+  s.manche++;
+  s.first = (s.first + 1) % s.order.length;
+  dealRound(s, mkRng(seed));
 }
 
 const active = (s) => s.order.filter((id) => !s.finished.includes(id));
@@ -79,8 +143,7 @@ export function reduce(s, pid, a) {
     // plus aucune carte à piocher et tout le monde passe : on compte les points
     s.stuck = !s.pile.length && s.discard.length <= 1 ? (s.stuck || 0) + 1 : 0;
     if (s.stuck >= s.order.length * 2) {
-      const pts = (id) => s.hands[id].reduce((t, c) => t + points(c), 0);
-      s.winner = s.order.slice().sort((x, y) => pts(x) - pts(y))[0];
+      endRound(s, s.order.slice().sort((x, y) => handPts(s, x) - handPts(s, y))[0], (a.seed || 1) ^ 0x5bd1e995);
     }
     return s;
   }
@@ -96,8 +159,9 @@ export function reduce(s, pid, a) {
     s.drew = false;
     s.stuck = 0;
     s.log = { id: pid, t: "play", card: a.card, suit: s.suit };
-    if (!hand.length) { s.winner = pid; return s; }
+    if (!hand.length) { endRound(s, pid, (a.seed || 1) ^ 0x5bd1e995); return s; }
     const n = s.order.length;
+    if (!specialsOn(s)) { s.cur = nextIdx(s, s.cur); return s; }
     if (r === "A" && n > 2) s.dir = -s.dir;
     if (r === "2") {
       const victim = s.order[nextIdx(s, s.cur)];
@@ -118,6 +182,17 @@ export function reduce(s, pid, a) {
 
 export function result(s) {
   if (!s.winner) return null;
+  if (s.target) {
+    // course aux points : le total le plus bas gagne
+    const rest = s.order.filter((id) => id !== s.winner).map((id) => ({ id, score: s.scores[id] })).sort((a, b) => a.score - b.score);
+    const ranking = [{ id: s.winner, rank: 1, score: s.scores[s.winner] }];
+    let rank = 1, prev = s.scores[s.winner];
+    rest.forEach((e, i) => {
+      if (e.score !== prev) { rank = i + 2; prev = e.score; }
+      ranking.push({ id: e.id, rank, score: e.score });
+    });
+    return { ranking };
+  }
   const pts0 = s.hands[s.winner].reduce((t, c) => t + points(c), 0);
   const rest = s.order.filter((id) => id !== s.winner)
     .map((id) => ({ id, score: s.hands[id].reduce((t, c) => t + points(c), 0) }))
@@ -139,7 +214,7 @@ export function bot(s, pid, rng) {
   const score = (c) => {
     const r = rankOf(c);
     if (r === "8") return -10;
-    if (r === "2" || r === "J") return 5;
+    if ((r === "2" || r === "J") && specialsOn(s)) return 5;
     return points(c) / 10 + hand.filter((x) => suitOf(x) === suitOf(c)).length;
   };
   ok.sort((a, b) => score(b) - score(a));

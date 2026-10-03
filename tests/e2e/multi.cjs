@@ -32,9 +32,14 @@ require("fs").mkdirSync(OUT, { recursive: true });
   await B.evaluate(() => (location.hash = "/"));
   await A.evaluate(() => (location.hash = "/"));
   await A.click('.gcard[aria-label="Puissance 4"]');
+  await A.click("text=Entre amis");
+  await A.click('.modecard:has-text("Match en 3")');
+  await A.click('.modecard:has-text("Classique")');
   await A.click("text=Créer un salon");
   await A.waitForSelector(".code-big");
   await okRules(A);
+  await A.waitForSelector(".lobby-set");
+  if (!(await A.textContent(".lobby .card h3, .lobby .card .h3")).includes("Classique")) errs.push("mode non affiché dans le salon");
   const code = await A.textContent(".code-big");
   await A.click(".lobby button:has-text('Inviter'):not(:has-text('Inviter un'))".replace(":not(:has-text('Inviter un'))", "") ).catch(() => {});
   // bouton Inviter de la ligne d'ami (pas le bouton de partage)
@@ -111,8 +116,15 @@ require("fs").mkdirSync(OUT, { recursive: true });
   console.log("grille complète :", filled);
   if (!filled) errs.push("grille sudoku incomplète");
   await A.screenshot({ path: OUT + "/m-sudoku-end.png" });
+  // statistiques : bilan et rival
+  await A.evaluate(() => { document.querySelectorAll(".sheet-wrap").forEach((x) => x.remove()); location.hash = "/stats"; });
+  await A.waitForSelector(".kpis");
+  await A.waitForSelector("text=Face à tes adversaires");
+  if (!/parties? jouées?/.test(await A.textContent(".kpis"))) errs.push("stats : total absent");
+  await A.screenshot({ path: OUT + "/m-stats.png", fullPage: true });
+  console.log("stats : ok");
   // classement
-  await A.evaluate(() => { document.querySelectorAll(".sheet-wrap").forEach((x) => x.remove()); location.hash = "/classement"; });
+  await A.evaluate(() => { location.hash = "/classement"; });
   await A.waitForSelector(".podium");
   await A.screenshot({ path: OUT + "/m-rank.png" });
   console.log(errs.join("\n") || "aucune erreur");

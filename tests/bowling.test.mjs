@@ -71,3 +71,58 @@ test("parties complètes avec robots", () => {
   assert.ok(best > 40, "les robots savent jouer : " + best);
   timeoutPlayout(G, 2, 3, { turnTime: 10, frames: 5 });
 });
+
+test("options et modes bien formés", () => {
+  const keys = G.options.map((o) => o.key);
+  assert.ok(G.options.length >= 2 && G.options.length <= 5);
+  for (const o of G.options) {
+    assert.ok(o.values.some((v) => v[0] === o.def), o.key + " : défaut dans les valeurs");
+    for (const v of o.values) { assert.ok(v[1].length <= 12, v[1]); if (v[2]) assert.ok(v[2].length <= 18, v[2]); }
+  }
+  assert.ok(!keys.includes("level") && !keys.includes("turnTime"));
+  assert.ok(G.modes.length >= 3 && G.modes.length <= 4);
+  for (const m of G.modes) for (const k of Object.keys(m.set)) assert.ok(keys.includes(k), m.id + " : " + k);
+  assert.equal(G.modes[0].name, "Classique");
+  assert.deepEqual(G.modes[0].set, Object.fromEntries(G.options.map((o) => [o.key, o.def])));
+  // valeurs absentes ou invalides : défaut
+  const s = start(G, [{ id: "a" }], { frames: 7, bumpers: "peut-être", wind: 9, oil: "glace" }, 1, 0);
+  assert.equal(s.n, 10); assert.equal(s.bump, false); assert.equal(s.wind, 0); assert.equal(s.oil, 1);
+});
+
+test("chaque mode se joue jusqu'au bout", () => {
+  for (const m of G.modes) for (const n of [1, 6]) {
+    const { st } = playout(G, n, 11 + n, { settings: m.set });
+    assert.equal(st.n, m.set.frames);
+  }
+});
+
+test("effet concret des options", () => {
+  const all = Array(10).fill(true);
+  const gutter = { x: 0.4, vx: 0.6, vy: 8, spin: 1 };
+  // bumpers : plus de rigole, la boule revient sur la piste
+  assert.equal(G.simulate(gutter, all).down.length, 0);
+  const rec = G.simulate(gutter, all, true, { bump: true });
+  assert.ok(rec.frames.every((f) => !f.b[2]), "jamais dans la rigole avec les bumpers");
+  // vent : la boule dévie dans le sens du vent
+  const straight = { x: 0, vx: 0, vy: 8, spin: 0 };
+  const endX = (env) => { const f = G.simulate(straight, all, true, env).frames; return f.find((q) => q.b[1] > 10).b[0]; };
+  assert.ok(endX({ wind: 0.25 }) > endX({}) + 0.05);
+  assert.ok(endX({ wind: -0.25 }) < endX({}) - 0.05);
+  // piste sèche : plus d'effet, piste huilée : moins
+  const hook = { x: 0, vx: 0, vy: 8, spin: 0.8 };
+  const hx = (oil) => G.simulate(hook, all, true, { oil }).frames.find((q) => q.b[1] > 15).b[0];
+  assert.ok(hx(G.OIL.seche) > hx(1) && hx(1) > hx(G.OIL.huilee));
+  // le vent change à chaque lancer et reste dans les bornes
+  let s = start(G, [{ id: "a" }], { wind: 2, frames: 3 }, 4, 0);
+  const seen = new Set();
+  while (!s.result) {
+    assert.ok(Math.abs(s.wind) >= 0.16 && Math.abs(s.wind) <= 0.32, "vent " + s.wind);
+    seen.add(s.wind);
+    s = apply(G, s, "a", { type: "throw", x: 0, vx: 0, vy: 9, spin: 0, seed: seen.size * 31 + 7 });
+    assert.equal(typeof s.last.env.wind, "number");
+  }
+  assert.ok(seen.size > 1);
+  // 3 frames : partie courte
+  const { st } = playout(G, 2, 5, { settings: { frames: 3 } });
+  for (const id of st.order) assert.ok(st.rolls[id].length >= 3 + 1 && st.rolls[id].length <= 7);
+});

@@ -10,7 +10,9 @@ if (bc) bc.onmessage = (e) => subs.forEach((f) => f(e.data));
 const emit = (msg) => { subs.forEach((f) => f(msg)); bc && bc.postMessage(msg); };
 const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch { return null; } };
 const fresh = () => ({ users: {}, profiles: {}, friends: [], invites: [], rooms: {}, results: [], seq: 1 });
-function tx(fn) { const db = load() || fresh(); const out = fn(db); localStorage.setItem(KEY, JSON.stringify(db)); return out; }
+// lecture-modification-écriture atomique entre onglets (sinon deux onglets s'écrasent)
+function txSync(fn) { const db = load() || fresh(); const out = fn(db); localStorage.setItem(KEY, JSON.stringify(db)); return out; }
+const tx = (fn) => (typeof navigator !== "undefined" && navigator.locks ? navigator.locks.request("jeuxmock-db", () => txSync(fn)) : Promise.resolve().then(() => txSync(fn)));
 const read = () => load() || fresh();
 const uuid = () => "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => { const r = (Math.random() * 16) | 0; return (c === "x" ? r : (r & 3) | 8).toString(16); });
 const err = (m) => { throw new Error(m); };
@@ -38,7 +40,7 @@ export function createApi() {
     async signUp(email, password, username) {
       if (!/^\S+@\S+\.\S+$/.test(email)) err("Adresse email invalide.");
       if ((password || "").length < 6) err("Le mot de passe doit faire au moins 6 caractères.");
-      const id = tx((db) => {
+      const id = await tx((db) => {
         if (db.users[email]) err("Un compte existe déjà avec cet email.");
         const nid = uuid();
         db.users[email] = { id: nid, password, username };
@@ -61,7 +63,7 @@ export function createApi() {
 
     async profile() {
       const id = me();
-      return delay(tx((db) => {
+      return delay(await tx((db) => {
         if (db.profiles[id]) return db.profiles[id];
         const u = Object.values(db.users).find((x) => x.id === id) || {};
         let base = String(u.username || "joueur").toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 12);
@@ -69,27 +71,27 @@ export function createApi() {
         let cand = base;
         while (Object.values(db.profiles).some((p) => p.username === cand)) cand = base + Math.floor(1000 + Math.random() * 9000);
         db.profiles[id] = { id, username: cand, display_name: (u.username || cand).slice(0, 20), avatar_url: null, equipped: {}, owned: [],
-          gems: REWARDS.start, xp: 0, wins: 0, games: 0, stats: {}, daily_last: null, daily_streak: 0, solo_day: null, solo_gems: 0, last_reward: 0 };
+          gems: REWARDS.start, xp: 0, wins: 0, games: 0, stats: {}, favorites: [], game_prefs: {}, daily_last: null, daily_streak: 0, solo_day: null, solo_gems: 0, last_reward: 0 };
         return db.profiles[id];
       }));
     },
-    async setDisplayName(name) { const id = me(); return delay(tx((db) => { db.profiles[id].display_name = String(name).slice(0, 20); return db.profiles[id]; })); },
+    async setDisplayName(name) { const id = me(); return delay(await tx((db) => { db.profiles[id].display_name = String(name).slice(0, 20); return db.profiles[id]; })); },
     async setUsername(u) {
       const id = me(); u = String(u).toLowerCase().trim();
       if (!/^[a-z0-9_]{3,16}$/.test(u)) err("Pseudo : 3 à 16 lettres, chiffres ou _.");
-      return delay(tx((db) => {
+      return delay(await tx((db) => {
         if (Object.values(db.profiles).some((p) => p.username === u && p.id !== id)) err("Ce pseudo est déjà pris.");
         db.profiles[id].username = u; return db.profiles[id];
       }));
     },
     async uploadPhoto(blob) {
       const url = await new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(blob); });
-      const id = me(); return tx((db) => { db.profiles[id].avatar_url = url; return db.profiles[id]; });
+      const id = me(); return await tx((db) => { db.profiles[id].avatar_url = url; return db.profiles[id]; });
     },
-    async removePhoto() { const id = me(); return tx((db) => { db.profiles[id].avatar_url = null; return db.profiles[id]; }); },
+    async removePhoto() { const id = me(); return await tx((db) => { db.profiles[id].avatar_url = null; return db.profiles[id]; }); },
     async buy(item) {
       const id = me(); const it = ITEMS.find((i) => i.id === item) || err("objet inconnu");
-      return delay(tx((db) => {
+      return delay(await tx((db) => {
         const p = db.profiles[id];
         if (it.price === 0 || p.owned.includes(item)) return p;
         if (p.gems < it.price) err("Pas assez de gemmes.");
@@ -98,7 +100,7 @@ export function createApi() {
     },
     async equip(slot, item) {
       const id = me(); const it = ITEMS.find((i) => i.id === item && i.slot === slot) || err("objet inconnu");
-      return delay(tx((db) => {
+      return delay(await tx((db) => {
         const p = db.profiles[id];
         if (it.price > 0 && !p.owned.includes(item)) err("Achète d'abord cet objet.");
         p.equipped = { ...DEFAULT_EQUIP, ...p.equipped, [slot]: item }; return p;
@@ -106,7 +108,7 @@ export function createApi() {
     },
     async daily() {
       const id = me();
-      return delay(tx((db) => {
+      return delay(await tx((db) => {
         const p = db.profiles[id], t = today();
         if (p.daily_last === t) return { ok: false, profile: p };
         const y = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
@@ -116,16 +118,30 @@ export function createApi() {
         return { ok: true, gems, streak, profile: p };
       }));
     },
-    async soloReward(game, outcome) {
+    async setFavorites(list) { const id = me(); return delay(await tx((db) => { db.profiles[id].favorites = list.slice(0, 120); return db.profiles[id]; })); },
+    async setGamePrefs(prefs) { const id = me(); return delay(await tx((db) => { db.profiles[id].game_prefs = prefs; return db.profiles[id]; })); },
+    async myStats() {
+      const id = me(); const db = read();
+      const mine = db.results.filter((r) => r.user_id === id);
+      const rows = mine.map((r) => [r.game, r.outcome, r.place ?? null, r.gems, r.xp, r.score ?? null, r.duration ?? null, r.at, r.humans || 1, r.mode || null]);
+      const riv = {};
+      for (const m of mine.filter((r) => r.room_id)) for (const o of db.results.filter((x) => x.room_id === m.room_id && x.round === m.round && x.user_id !== id)) {
+        const p = db.profiles[o.user_id]; if (!p) continue;
+        const v = riv[o.user_id] || (riv[o.user_id] = { id: o.user_id, display_name: p.display_name, username: p.username, avatar_url: p.avatar_url, equipped: p.equipped, games: 0, ahead: 0, behind: 0 });
+        v.games++; if (m.place < o.place) v.ahead++; if (m.place > o.place) v.behind++;
+      }
+      return delay({ rows, rivals: Object.values(riv).sort((a, b) => b.games - a.games) });
+    },
+    async soloReward(game, outcome, x = {}) {
       const id = me();
-      return delay(tx((db) => {
+      return delay(await tx((db) => {
         const p = db.profiles[id];
         if (p.last_reward && Date.now() - p.last_reward < 25000) return { ok: false, reason: "trop_vite", profile: p };
         const r = REWARDS.solo[outcome];
         const already = p.solo_day === today() ? p.solo_gems : 0;
         const gems = Math.max(0, Math.min(r.gems, 250 - already));
         p.solo_day = today(); p.solo_gems = already + gems;
-        db.results.push({ user_id: id, game, outcome, gems, xp: r.xp, at: Date.now() });
+        db.results.push({ user_id: id, game, outcome, gems, xp: r.xp, at: Date.now(), score: x.score ?? null, duration: x.duration ?? null, humans: 1, mode: x.mode || null });
         return { ok: true, gems, xp: r.xp, profile: credit(db, id, game, outcome, gems, r.xp) };
       }));
     },
@@ -149,7 +165,7 @@ export function createApi() {
     },
     async friendRequest(username) {
       const id = me();
-      const out = tx((db) => {
+      const out = await tx((db) => {
         const o = Object.values(db.profiles).find((p) => p.username === String(username).toLowerCase().trim());
         if (!o) err("Aucun joueur avec ce pseudo.");
         if (o.id === id) err("C'est ton propre pseudo !");
@@ -162,7 +178,7 @@ export function createApi() {
     },
     async friendRespond(other, accept) {
       const id = me();
-      tx((db) => {
+      await tx((db) => {
         const i = db.friends.findIndex((x) => (x.a === id && x.b === other) || (x.b === id && x.a === other));
         if (i < 0) return;
         if (accept) { if (db.friends[i].requester !== id) db.friends[i].status = "accepted"; } else db.friends.splice(i, 1);
@@ -171,7 +187,7 @@ export function createApi() {
     },
     async friendRemove(other) {
       const id = me();
-      tx((db) => { db.friends = db.friends.filter((x) => !((x.a === id && x.b === other) || (x.b === id && x.a === other))); });
+      await tx((db) => { db.friends = db.friends.filter((x) => !((x.a === id && x.b === other) || (x.b === id && x.a === other))); });
       emit({ t: "friends" });
     },
     onFriends(cb) { const f = (m) => m.t === "friends" && cb(); subs.add(f); return () => subs.delete(f); },
@@ -182,7 +198,7 @@ export function createApi() {
     },
     async invite(roomId, to) {
       const id = me();
-      tx((db) => {
+      await tx((db) => {
         const r = db.rooms[roomId];
         if (!r || !isMember(r, id)) err("pas dans ce salon");
         if (!db.friends.some((f) => f.status === "accepted" && ((f.a === id && f.b === to) || (f.b === id && f.a === to)))) err("Vous n'êtes pas encore amis.");
@@ -191,7 +207,7 @@ export function createApi() {
       });
       emit({ t: "invites" });
     },
-    async deleteInvite(iid) { tx((db) => { db.invites = db.invites.filter((i) => i.id !== iid); }); emit({ t: "invites" }); },
+    async deleteInvite(iid) { await tx((db) => { db.invites = db.invites.filter((i) => i.id !== iid); }); emit({ t: "invites" }); },
     onInvites(cb) { const f = (m) => m.t === "invites" && cb(m); subs.add(f); return () => subs.delete(f); },
 
     onOnline(cb) {
@@ -212,7 +228,7 @@ export function createApi() {
     rooms: {
       async create(game, max, settings, meP) {
         const id = me();
-        const room = tx((db) => {
+        const room = await tx((db) => {
           const rid = uuid();
           const A = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
           let code;
@@ -226,7 +242,7 @@ export function createApi() {
       },
       async join(code, meP) {
         const id = me();
-        const room = tx((db) => {
+        const room = await tx((db) => {
           const r = Object.values(db.rooms).find((x) => x.code === String(code).toUpperCase().trim());
           if (!r) err("Salon introuvable. Vérifie le code.");
           if (isMember(r, id)) return r;
@@ -242,7 +258,7 @@ export function createApi() {
       },
       async update(rid, version, patch) {
         const id = me();
-        const out = tx((db) => {
+        const out = await tx((db) => {
           const r = db.rooms[rid];
           if (!r) err("Salon introuvable. Vérifie le code.");
           if (!isMember(r, id)) err("pas dans ce salon");
@@ -260,7 +276,7 @@ export function createApi() {
       },
       async leave(rid) {
         const id = me();
-        tx((db) => {
+        await tx((db) => {
           const r = db.rooms[rid];
           if (!r || !isMember(r, id)) return;
           r.players = r.status === "lobby" ? r.players.filter((p) => p.id !== id) : r.players.map((p) => (p.id === id ? { ...p, left: true } : p));
@@ -273,7 +289,7 @@ export function createApi() {
       },
       async claim(rid) {
         const id = me();
-        return delay(tx((db) => {
+        return delay(await tx((db) => {
           const r = db.rooms[rid];
           if (!r || r.status !== "done") err("partie pas finie");
           const round = (r.state && r.state.round) || 0;
@@ -286,7 +302,8 @@ export function createApi() {
           let gems, xp;
           if (humans >= 2) { ({ gems, xp } = REWARDS.multi[Math.min(place, 4) - 1]); if (outcome === "draw") { gems = 15; xp = 70; } }
           else ({ gems, xp } = REWARDS.solo[outcome]);
-          db.results.push({ user_id: id, room_id: rid, round, game: r.game, outcome, gems, xp, at: Date.now() });
+          db.results.push({ user_id: id, room_id: rid, round, game: r.game, outcome, place, gems, xp, at: Date.now(), score: rk.score ?? null,
+            duration: r.state.startedAt ? Math.round((Date.now() - r.state.startedAt) / 1000) : null, humans, mode: (r.settings && r.settings.mode) || null });
           return { ok: true, gems, xp, outcome, place, profile: credit(db, id, r.game, outcome, gems, xp) };
         }));
       },

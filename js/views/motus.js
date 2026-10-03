@@ -1,6 +1,6 @@
 import { h } from "../ui.js";
 import { nameOf } from "./common.js";
-import { MAX_TRIES, check, norm, marks } from "../games/motus.js";
+import { triesOf, firstGiven, check, norm, marks } from "../games/motus.js";
 
 export const scoreOf = (s, id) => s.scores[id];
 
@@ -29,14 +29,15 @@ export function mount(root, ctx0) {
     const playing = status === "playing";
     const hist = s.history[s.history.length - 1];
     const rows = [];
-    for (let k = 0; k < MAX_TRIES; k++) {
+    const given = firstGiven(s);
+    for (let k = 0; k < triesOf(s); k++) {
       const g = b[k];
       const isCur = playing && k === b.length;
       const row = h("div", { class: "mt-row" + (isCur && shake ? " shake" : "") });
       for (let i = 0; i < L; i++) {
         let ch = "", cls = "mt-cell";
         if (g) { ch = g.w[i]; cls += [" no", " mal", " bien"][g.m[i]]; cls += " flip"; }
-        else if (isCur) { ch = typed[i] || (i === 0 ? s.word[0] : ""); if (!typed[i] && i === 0) cls += " hint"; if (typed[i]) cls += " typed"; }
+        else if (isCur) { ch = typed[i] || (i === 0 && given ? s.word[0] : ""); if (!typed[i] && i === 0 && given) cls += " hint"; if (typed[i]) cls += " typed"; }
         row.append(h("span", { class: cls, style: g ? `animation-delay:${i * 70}ms` : null }, ch));
       }
       rows.push(row);
@@ -52,7 +53,7 @@ export function mount(root, ctx0) {
       h("div", { class: "small" }, nameOf(ctx, id), s.status[id] === "found" ? " ✓" : s.status[id] === "out" ? " ✗" : ""),
       h("div", { class: "mt-minigrid" }, (s.boards[id] || []).map((g) => h("div", { class: "row" }, g.m.map((m) => h("i", { class: ["no", "mal", "bien"][m] })))))));
     el.replaceChildren(
-      h("div", { class: "row between small", style: { margin: "0 2px 8px" } }, h("span", { class: "dim" }, `Manche ${s.roundNo} / ${s.rounds} · ${L} lettres`), h("span", null, "Score ", h("b", null, s.scores[ctx.me] ?? 0))),
+      h("div", { class: "row between small", style: { margin: "0 2px 8px" } }, h("span", { class: "dim" }, `Manche ${s.roundNo} / ${s.rounds} · ${L} lettres · ${triesOf(s)} essais`), h("span", null, "Score ", h("b", null, s.scores[ctx.me] ?? 0))),
       hist && s.roundNo > 1 && b.length === 0 ? h("div", { class: "small dim center" }, `Le mot précédent était ${hist.word}`) : null,
       h("div", { class: "mt-board" }, rows),
       !playing ? h("div", { class: "turnmsg " + (status === "found" ? "me" : "") }, status === "found" ? "Trouvé ! On attend les autres…" : `Raté ! C'était ${s.word}. On attend les autres…`) : null,
@@ -74,7 +75,7 @@ export function mount(root, ctx0) {
     const s = ctx.state;
     if (s.status[ctx.me] !== "playing") return;
     if (c === "⌫") typed = typed.slice(0, -1);
-    else if (typed.length < s.len) { if (!typed && c !== s.word[0]) typed = s.word[0]; typed += c; if (typed.length > s.len) typed = typed.slice(0, s.len); }
+    else if (typed.length < s.len) { if (!typed && firstGiven(s) && c !== s.word[0]) typed = s.word[0]; typed += c; if (typed.length > s.len) typed = typed.slice(0, s.len); }
     ctx.sfx.tap();
     draw(ctx);
   }

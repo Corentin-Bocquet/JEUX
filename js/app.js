@@ -44,6 +44,7 @@ const ROUTES = {
   classement: () => import("./screens/rank.js"),
   boutique: () => import("./screens/shop.js"),
   profil: () => import("./screens/profile.js"),
+  stats: () => import("./screens/stats.js"),
   salon: () => import("./screens/room.js"),
   solo: () => import("./screens/room.js"),
 };

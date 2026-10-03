@@ -77,7 +77,16 @@ export function createApi() {
     async buy(item) { return must(await sb.rpc("jeux_buy", { p_item: item })); },
     async equip(slot, item) { return must(await sb.rpc("jeux_equip", { p_slot: slot, p_item: item })); },
     async daily() { return must(await sb.rpc("jeux_daily")); },
-    async soloReward(game, outcome) { return must(await sb.rpc("jeux_solo_reward", { p_game: game, p_outcome: outcome })); },
+    async soloReward(game, outcome, x = {}) {
+      return must(await sb.rpc("jeux_solo_reward", { p_game: game, p_outcome: outcome, p_score: x.score ?? null, p_duration: x.duration ?? null, p_mode: x.mode ?? null }));
+    },
+    async myStats() { return must(await sb.rpc("jeux_my_stats")); },
+    async setFavorites(list) {
+      return must(await sb.from("jeux_profiles").update({ favorites: list.slice(0, 120) }).eq("id", user.id).select().single());
+    },
+    async setGamePrefs(prefs) {
+      return must(await sb.from("jeux_profiles").update({ game_prefs: prefs }).eq("id", user.id).select().single());
+    },
     async leaderboard(scope, period, game = null) {
       return must(await sb.rpc("jeux_leaderboard", { p_scope: scope, p_period: period, p_game: game })) || [];
     },

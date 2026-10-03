@@ -28,6 +28,7 @@ export function render(A, main) {
         h("div", { class: "stat glass" }, h("b", null, fmt(p.games)), h("span", null, "parties")),
         h("div", { class: "stat glass" }, h("b", null, fmt(p.wins)), h("span", null, "victoires")),
         h("div", { class: "stat glass" }, h("b", null, p.games ? Math.round((100 * p.wins) / p.games) + "%" : "-"), h("span", null, "de réussite"))),
+      h("button", { class: "btn purple block big", onclick: () => A.go("/stats") }, "📊 Voir toutes mes statistiques"),
       h("div", { class: "card glass stack" },
         h("div", { class: "h3" }, "Mon compte"),
         row("crayon", "Nom affiché", p.display_name, editName),
@@ -40,9 +41,9 @@ export function render(A, main) {
           h("button", { class: "switch" + (prefs.sound ? " on" : ""), role: "switch", "aria-checked": prefs.sound ? "true" : "false", "aria-label": "Sons", onclick: () => { prefs.sound = !prefs.sound; sfx.tap(); draw(); } }))),
       h("div", { class: "card glass stack" },
         h("div", { class: "h3" }, "Mes jeux"),
-        h("div", { class: "list" }, GAMES.map((g) => {
+        h("div", { class: "list" }, GAMES.slice().sort((a, b) => ((stats[b.id] || {}).p || 0) - ((stats[a.id] || {}).p || 0)).map((g) => {
           const s = stats[g.id] || { p: 0, w: 0 };
-          return h("div", { class: "row gap" }, tile(g.icon, 36, g.color), h("div", { class: "grow" }, g.name),
+          return h("div", { class: "row gap" }, tile(g.icon, 36, g.color), h("div", { class: "grow" }, g.name, (p.favorites || []).includes(g.id) ? " ❤️" : ""),
             h("span", { class: "small dim" }, s.p ? `${s.w} / ${s.p} gagnées` : "pas encore joué"));
         }))),
       h("button", { class: "btn ghost block", onclick: async () => { if (await confirmBox("Te déconnecter ?", { ok: "Déconnexion", danger: true })) A.api.signOut(); } }, icon("quitter", 20), "Déconnexion"),

@@ -30,7 +30,13 @@ create index if not exists jeux_profiles_xp on public.jeux_profiles (xp desc);
 alter table public.jeux_profiles enable row level security;
 revoke all on public.jeux_profiles from anon, authenticated;
 grant select on public.jeux_profiles to authenticated;
-grant update (display_name, avatar_url, last_seen) on public.jeux_profiles to authenticated;
+-- favoris et derniers réglages choisis par jeu (synchronisés entre appareils)
+alter table public.jeux_profiles add column if not exists favorites text[] not null default '{}';
+alter table public.jeux_profiles add column if not exists game_prefs jsonb not null default '{}'::jsonb;
+alter table public.jeux_profiles drop constraint if exists jeux_profiles_prefs_taille;
+alter table public.jeux_profiles add constraint jeux_profiles_prefs_taille
+  check (cardinality(favorites) <= 120 and pg_column_size(game_prefs) < 24000);
+grant update (display_name, avatar_url, last_seen, favorites, game_prefs) on public.jeux_profiles to authenticated;
 
 drop policy if exists "jeux profils lisibles" on public.jeux_profiles;
 create policy "jeux profils lisibles" on public.jeux_profiles for select to authenticated using (true);
@@ -131,6 +137,15 @@ create table if not exists public.jeux_results (
   created_at timestamptz not null default now()
 );
 alter table public.jeux_results add column if not exists round integer not null default 0;
+-- détails pour les statistiques : score final, durée (s), nombre d humains, mode choisi
+alter table public.jeux_results add column if not exists score numeric;
+alter table public.jeux_results add column if not exists duration integer;
+alter table public.jeux_results add column if not exists humans integer not null default 1;
+alter table public.jeux_results add column if not exists mode text;
+create index if not exists jeux_results_user on public.jeux_results (user_id, created_at desc);
+create index if not exists jeux_results_room on public.jeux_results (room_id, round);
+update public.jeux_results x set humans = (select count(distinct y.user_id) from public.jeux_results y where y.room_id = x.room_id and y.round = x.round)
+  where x.room_id is not null and x.humans = 1;
 alter table public.jeux_results drop constraint if exists jeux_results_user_id_room_id_key;
 create unique index if not exists jeux_results_unique_round on public.jeux_results (user_id, room_id, round);
 create index if not exists jeux_results_week on public.jeux_results (created_at, user_id);
@@ -240,7 +255,9 @@ end $$;
 revoke all on function public.jeux__credit(uuid, text, text, int, int) from public, anon, authenticated;
 
 -- partie solo (contre des robots) : 25 s minimum entre deux gains, 250 gemmes par jour au plus
-create or replace function public.jeux_solo_reward(p_game text, p_outcome text)
+drop function if exists public.jeux_solo_reward(text, text);
+create or replace function public.jeux_solo_reward(p_game text, p_outcome text, p_score numeric default null,
+  p_duration integer default null, p_mode text default null)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare me uuid := auth.uid(); r public.jeux_profiles; today date := (now() at time zone 'Europe/Paris')::date;
   v_gems int; v_xp int; already int;
@@ -256,7 +273,8 @@ begin
   already := case when r.solo_day = today then r.solo_gems else 0 end;
   v_gems := greatest(0, least(v_gems, 250 - already));
   update jeux_profiles set solo_day = today, solo_gems = already + v_gems where id = me;
-  insert into jeux_results (user_id, room_id, game, outcome, gems, xp) values (me, null, p_game, p_outcome, v_gems, v_xp);
+  insert into jeux_results (user_id, room_id, game, outcome, gems, xp, score, duration, humans, mode)
+  values (me, null, p_game, p_outcome, v_gems, v_xp, p_score, least(greatest(p_duration, 0), 10800), 1, left(p_mode, 24));
   r := jeux__credit(me, p_game, p_outcome, v_gems, v_xp);
   return jsonb_build_object('ok', true, 'gems', v_gems, 'xp', v_xp, 'profile', to_jsonb(r));
 end $$;
@@ -399,7 +417,12 @@ begin
   -- deux gains a moins de 10 s d intervalle : pas de gemmes (anti-triche)
   select * into prof from jeux_profiles where id = me;
   if prof.last_reward is not null and prof.last_reward > now() - interval '10 seconds' then v_gems := 0; end if;
-  insert into jeux_results (user_id, room_id, game, outcome, place, gems, xp, round) values (me, p_room, r.game, outcome, place, v_gems, v_xp, v_round);
+  insert into jeux_results (user_id, room_id, game, outcome, place, gems, xp, round, score, duration, humans, mode)
+  values (me, p_room, r.game, outcome, place, v_gems, v_xp, v_round,
+    case when (rk->>'score') ~ '^-?[0-9]+(\.[0-9]+)?$' then (rk->>'score')::numeric end,
+    case when (r.state->>'startedAt') ~ '^[0-9]+$'
+      then least(greatest((extract(epoch from now()) - (r.state->>'startedAt')::bigint / 1000.0)::int, 0), 10800) end,
+    humans, left(r.settings->>'mode', 24));
   prof := jeux__credit(me, r.game, outcome, v_gems, v_xp);
   return jsonb_build_object('ok', true, 'gems', v_gems, 'xp', v_xp, 'outcome', outcome, 'place', place, 'profile', to_jsonb(prof));
 end $$;
@@ -480,19 +503,43 @@ begin
   limit 100;
 end $$;
 
+
+-- ---------------- statistiques personnelles : historique brut (calculs côté app) + rivaux
+create or replace function public.jeux_my_stats()
+returns jsonb language plpgsql stable security definer set search_path = public as $$
+declare me uuid := auth.uid(); v_rows jsonb; v_rivals jsonb;
+begin
+  if me is null then raise exception 'non connecte'; end if;
+  select coalesce(jsonb_agg(jsonb_build_array(x.game, x.outcome, x.place, x.gems, x.xp, x.score, x.duration,
+           (extract(epoch from x.created_at) * 1000)::bigint, x.humans, x.mode) order by x.created_at), '[]'::jsonb)
+    into v_rows
+    from (select * from jeux_results where user_id = me order by created_at desc limit 5000) x;
+  select coalesce(jsonb_agg(t order by t.games desc), '[]'::jsonb) into v_rivals from (
+    select o.user_id as id, p.display_name, p.username, p.avatar_url, p.equipped, count(*)::int as games,
+      sum(case when m.place < o.place then 1 else 0 end)::int as ahead,
+      sum(case when m.place > o.place then 1 else 0 end)::int as behind
+    from jeux_results m
+    join jeux_results o on o.room_id = m.room_id and o.round = m.round and o.user_id <> m.user_id
+    join jeux_profiles p on p.id = o.user_id
+    where m.user_id = me and m.room_id is not null
+    group by o.user_id, p.display_name, p.username, p.avatar_url, p.equipped
+    order by count(*) desc limit 20) t;
+  return jsonb_build_object('rows', v_rows, 'rivals', v_rivals);
+end $$;
+
 -- droits d execution
 revoke all on function public.jeux_ensure_profile(text,text), public.jeux_set_username(text), public.jeux_buy(text),
-  public.jeux_equip(text,text), public.jeux_daily(), public.jeux_solo_reward(text,text),
+  public.jeux_equip(text,text), public.jeux_daily(), public.jeux_solo_reward(text,text,numeric,integer,text),
   public.jeux_room_create(text,int,jsonb,jsonb), public.jeux_room_join(text,jsonb), public.jeux_room_update(uuid,int,jsonb),
   public.jeux_room_leave(uuid), public.jeux_room_claim(uuid), public.jeux_friend_request(text),
   public.jeux_friend_respond(uuid,boolean), public.jeux_friend_remove(uuid), public.jeux_invite(uuid,uuid),
-  public.jeux_leaderboard(text,text,text) from public, anon;
+  public.jeux_leaderboard(text,text,text), public.jeux_my_stats() from public, anon;
 grant execute on function public.jeux_ensure_profile(text,text), public.jeux_set_username(text), public.jeux_buy(text),
-  public.jeux_equip(text,text), public.jeux_daily(), public.jeux_solo_reward(text,text),
+  public.jeux_equip(text,text), public.jeux_daily(), public.jeux_solo_reward(text,text,numeric,integer,text),
   public.jeux_room_create(text,int,jsonb,jsonb), public.jeux_room_join(text,jsonb), public.jeux_room_update(uuid,int,jsonb),
   public.jeux_room_leave(uuid), public.jeux_room_claim(uuid), public.jeux_friend_request(text),
   public.jeux_friend_respond(uuid,boolean), public.jeux_friend_remove(uuid), public.jeux_invite(uuid,uuid),
-  public.jeux_leaderboard(text,text,text) to authenticated;
+  public.jeux_leaderboard(text,text,text), public.jeux_my_stats() to authenticated;
 revoke all on function public.jeux__code() from public, anon, authenticated;
 
 -- ============================================================ TEMPS REEL

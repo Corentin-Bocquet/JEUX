@@ -102,3 +102,68 @@ test("jusqu'au dernier survivant et délais", () => {
   assert.ok(st.result.ranking.length === 3);
   timeoutPlayout(G, 4, 4, { turnTime: 10, hands: 5 });
 });
+
+// ------------------------------------------------ options et modes
+function checkShape(G, legacy) {
+  const keys = G.options.map((o) => o.key);
+  assert.ok(keys.length >= 2 && keys.length <= 5);
+  assert.equal(new Set(keys).size, keys.length);
+  assert.ok(!keys.includes("level") && !keys.includes("turnTime"));
+  for (const k of legacy) assert.ok(keys.includes(k), "réglage existant conservé : " + k);
+  for (const o of G.options) {
+    assert.ok(o.label && o.icon);
+    assert.ok(o.values.some((v) => v[0] === o.def), o.key + " : def dans values");
+    for (const v of o.values) {
+      assert.ok(["number", "string", "boolean"].includes(typeof v[0]));
+      assert.ok(v[1].length <= 12, "libellé trop long : " + v[1]);
+      assert.ok(v[2] == null || v[2].length <= 18, "indication trop longue : " + v[2]);
+    }
+  }
+  assert.ok(G.modes.length >= 3 && G.modes.length <= 4);
+  assert.equal(G.modes[0].name, "Classique");
+  const defs = Object.fromEntries(G.options.map((o) => [o.key, o.def]));
+  assert.deepEqual(G.modes[0].set, defs, "le mode classique = défauts");
+  for (const m of G.modes) {
+    assert.ok(m.id && m.name && m.emoji && m.desc);
+    for (const [k, v] of Object.entries(m.set)) {
+      const o = G.options.find((x) => x.key === k);
+      assert.ok(o, m.id + " : clé inconnue " + k);
+      assert.ok(o.values.some((x) => x[0] === v), m.id + " : valeur hors liste pour " + k);
+    }
+  }
+  const src = JSON.stringify([G.options, G.modes, G.meta]);
+  assert.ok(!src.includes(String.fromCharCode(0x2014)), "pas de tiret cadratin");
+}
+
+test("options et modes bien formés", () => checkShape(G, ["hands", "chips"]));
+
+test("chaque mode se joue jusqu'au bout, 2 et 8 joueurs", () => {
+  G.modes.forEach((m, k) => {
+    for (const n of [2, 8]) {
+      const { st } = playout(G, n, 300 + k * 10 + n, { settings: m.set });
+      assert.ok(st.handNo <= m.set.hands);
+    }
+  });
+});
+
+test("blinds de départ, montée et blinds fixes", () => {
+  const P = Array.from({ length: 4 }, (_, i) => ({ id: "p" + i }));
+  assert.deepEqual([start(G, P, { blind: 50 }, 1, 0).sb, start(G, P, { blind: 50 }, 1, 0).bb], [25, 50]);
+  assert.deepEqual([start(G, P, { blind: 10 }, 1, 0).sb, start(G, P, { blind: 10 }, 1, 0).bb], [5, 10]);
+  // valeurs invalides : retour aux défauts
+  const bad = start(G, P, { blind: 37, blindUp: "vite", chips: "beaucoup" }, 1, 0);
+  assert.equal(bad.bb, 20); assert.equal(bad.blindUp, 6);
+  assert.equal(Object.values(bad.chips).reduce((a, b) => a + b, 0) + G.potTotal(bad), 4000);
+  const blindsAt = (blindUp) => {
+    const seen = {};
+    playout(G, 4, 77, { settings: { hands: 10, chips: 2000, blindUp }, onStep(s) { if (!s.over) seen[s.handNo] = s.bb; } });
+    return seen;
+  };
+  const fixed = blindsAt(0);
+  assert.ok(Object.keys(fixed).length >= 7);
+  assert.ok(Object.values(fixed).every((bb) => bb === 20), "blinds fixes");
+  const turbo = blindsAt(3);
+  assert.equal(turbo[3], 20); assert.equal(turbo[4], 40); assert.equal(turbo[7], 60);
+  const std = blindsAt(6);
+  assert.equal(std[6], 20); assert.equal(std[7], 40);
+});

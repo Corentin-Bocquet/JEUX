@@ -1,6 +1,6 @@
 import { h } from "../ui.js";
 import { nameOf } from "./common.js";
-import { revealed } from "../games/fleches.js";
+import { revealed, given } from "../games/fleches.js";
 import { norm } from "../games/motus.js";
 
 export const scoreOf = (s, id) => s.scores[id];
@@ -26,7 +26,7 @@ export function mount(root, ctx0) {
   }
   function draw(ctx) {
     const s = ctx.state;
-    const rev = revealed(s);
+    const rev = revealed(s), giv = given(s);
     const W = s.w, H = s.h;
     const active = sel >= 0 ? s.words[sel] : null;
     const activeCells = new Set(active ? active.cells : []);
@@ -46,7 +46,9 @@ export function mount(root, ctx0) {
       let ch = rev[i] || "";
       if (!ch && activeCells.has(i)) ch = typed[active.cells.indexOf(i)] || "";
       const by = [c.a, c.d].filter((x) => x != null).map((x) => s.words[x]).find((w) => w.by);
-      grid.append(h("button", { class: "fl-cell letter" + (activeCells.has(i) ? " act" : "") + (rev[i] ? " rev" : ""), style: by ? `--fc:${COLORS[s.ids.indexOf(by.by) % COLORS.length]}` : null,
+      // lettre donnée au départ (option) : affichée en gris tant que le mot n'est pas trouvé
+      const style = by ? `--fc:${COLORS[s.ids.indexOf(by.by) % COLORS.length]}` : giv[i] ? "color:#8A8DA8" : null;
+      grid.append(h("button", { class: "fl-cell letter" + (activeCells.has(i) ? " act" : "") + (by ? " rev" : ""), style,
         onclick: () => { const wi = c.a != null && !s.words[c.a].by ? c.a : c.d != null && !s.words[c.d].by ? c.d : null; if (wi != null) pick(ctx, wi); } }, ch));
     }
     const input = active && !active.by ? h("form", { class: "fl-input glass", onsubmit: (e) => { e.preventDefault(); send(ctx); } },
@@ -62,7 +64,7 @@ export function mount(root, ctx0) {
       h("div", { class: "row between small", style: { margin: "0 2px 8px" } }, h("span", { class: "dim" }, `${done} / ${s.words.length} mots`),
         h("span", { class: "row gap" }, s.ids.map((id) => h("span", { style: { color: COLORS[s.ids.indexOf(id) % COLORS.length] } }, nameOf(ctx, id), " ", h("b", null, s.scores[id]))))),
       grid, input,
-      h("p", { class: "tiny dim center" }, "Mot juste : autant de points que de lettres. Erreur : -1."));
+      h("p", { class: "tiny dim center" }, `Mot juste : autant de points que de lettres. Erreur : ${(s.penalty ?? 1) ? "-" + (s.penalty ?? 1) : "sans pénalité"}.`));
     if (hadFocus) { const i = document.getElementById("fl-ans"); if (i) { i.focus({ preventScroll: true }); i.setSelectionRange(typed.length, typed.length); } }
     function drawGridOnly() {
       const cells = grid.querySelectorAll(".fl-cell");

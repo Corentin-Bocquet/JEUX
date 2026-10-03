@@ -4,6 +4,7 @@ import { avatarHTML } from "../avatar.js";
 import { gameInfo, loadGame, loadView } from "../games/index.js";
 import { RoomCtl, localStore, makeBot } from "../rooms.js";
 import { equipOf } from "../catalog.js";
+import { gameOptions, picker, carousel, summary, restore, modeOf } from "./settings.js";
 
 export async function render(A, main, { route, args }) {
   const solo = route === "solo";
@@ -122,6 +123,7 @@ export async function render(A, main, { route, args }) {
         h("div", { class: "row gap center", style: { marginTop: "10px" } },
           h("button", { class: "btn ghost small", onclick: () => copy(r.code) }, "Copier le code"),
           h("button", { class: "btn small", onclick: () => share(link) }, icon("partager", 18), "Inviter"))),
+      setCard(r, host),
       h("div", { class: "section" }, h("div", { class: "h3" }, `Joueurs ${r.players.length}/${r.max_players}`), h("span", { class: "small dim" }, info.min > 1 ? `${info.min} minimum` : "")),
       seats,
       friends.length ? h("div", { class: "section" }, h("div", { class: "h3" }, "Inviter un ami")) : null,
@@ -132,6 +134,32 @@ export async function render(A, main, { route, args }) {
       host ? h("button", { class: "btn green block", disabled: !canStart, onclick: () => { sfx.ok(); ctl.begin(); } }, canStart ? "Lancer la partie" : `Il faut ${info.min} joueurs`)
         : h("div", { class: "card glass center" }, h("div", { class: "h3" }, "En attente de l'hôte…"), h("p", { class: "lead small" }, "La partie démarre dès qu'il lance.")),
       h("div", { style: { height: "20px" } })));
+  }
+  // réglages de la partie : visibles par tous, modifiables par l'hôte avant le lancement
+  const OPT = gameOptions(game, room.game);
+  function setCard(r, host) {
+    const set = r.settings || {};
+    const { mode, chips } = summary(OPT.options, OPT.modes, set);
+    const t = set.turnTime ? `${set.turnTime} s` : "Libre";
+    return h("div", { class: "card glass stack", style: { marginTop: "12px" } },
+      h("div", { class: "row between" }, h("div", { class: "h3" }, mode ? `${mode.emoji || "🎮"} ${mode.name}` : OPT.options.length ? "🛠️ Personnalisé" : "Réglages"),
+        host ? h("button", { class: "btn small ghost", onclick: () => editSettings() }, icon("crayon", 16), "Modifier") : null),
+      h("div", { class: "lobby-set" }, ...chips, h("span", { class: "chip" }, "⏱️ Temps par tour : ", h("b", null, t))));
+  }
+  function editSettings() {
+    const cur = ctl.room.settings || {};
+    const conf = restore(OPT.options, cur);
+    conf.turnTime = [0, 20, 40, 60].includes(cur.turnTime) ? cur.turnTime : 0;
+    const turn = carousel([{ v: 0, t: "Libre", em: "♾️" }, { v: 20, t: "20 s", em: "⚡" }, { v: 40, t: "40 s", em: "⏱️" }, { v: 60, t: "60 s", em: "🐢" }],
+      () => conf.turnTime, (v) => (conf.turnTime = v), { label: "Temps par tour", icon: "⏱️" });
+    const ok = h("button", { class: "btn green block big" }, "Valider");
+    const sh = sheet(h("div", { class: "stack" }, OPT.options.length ? picker({ ...OPT, conf, color: info.color }) : null, turn, ok), { title: "Réglages de la partie" });
+    ok.onclick = async () => {
+      const next = { ...cur, turnTime: conf.turnTime, mode: modeOf(OPT.modes, OPT.options, conf) };
+      for (const o of OPT.options) next[o.key] = conf[o.key];
+      sh.close();
+      await ctl.patch((r) => (r.status !== "lobby" ? null : { settings: next })).then(() => toast("Réglages mis à jour", "ok")).catch((e) => toast(e.message, "err"));
+    };
   }
   async function share(link) {
     const text = `Viens jouer à ${info.name} avec moi sur JEUX ! Code : ${ctl.room.code}`;
@@ -213,7 +241,10 @@ export async function render(A, main, { route, args }) {
     claimedRound = round;
     try {
       let res;
-      if (solo) res = await A.api.soloReward(r.game, win ? "win" : draw ? "draw" : "lose");
+      if (solo) res = await A.api.soloReward(r.game, win ? "win" : draw ? "draw" : "lose", {
+        score: typeof mine.score === "number" && isFinite(mine.score) ? mine.score : null,
+        duration: r.state.startedAt ? Math.max(0, Math.round((Date.now() - r.state.startedAt) / 1000)) : null,
+        mode: (r.settings && r.settings.mode) || null });
       else res = await A.api.rooms.claim(r.id);
       if (res && res.ok) {
         const ge = h("span", null, "0"), xe = h("span", null, "0");

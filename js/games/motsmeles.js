@@ -6,7 +6,8 @@ export const meta = {
   rules: ["Les mots de la liste sont cachés dans la grille, dans tous les sens.",
     "Fais glisser ton doigt de la première à la dernière lettre d'un mot.",
     "Chaque mot trouvé rapporte autant de points que de lettres.",
-    "Quand tous les mots sont trouvés, le meilleur score gagne."],
+    "Quand tous les mots sont trouvés, le meilleur score gagne.",
+    "Options : sans diagonales, sans mots à l'envers, ou liste réduite aux initiales pour corser la chasse."],
 };
 
 export const THEMES = {
@@ -20,10 +21,41 @@ export const THEMES = {
   "Musique": "PIANO GUITARE VIOLON TROMPETTE BATTERIE FLUTE HARPE ACCORDEON SAXOPHONE TAMBOUR CHORALE CONCERT MELODIE RYTHME OPERA REFRAIN CLARINETTE TUBA",
 };
 const DIRS = [[0, 1], [1, 0], [1, 1], [-1, 1], [0, -1], [-1, 0], [-1, -1], [1, -1]];
+// directions permises : [dr, dc]. À l'endroit = de gauche à droite, ou de haut en bas si vertical
+export function dirsFor(diag = true, back = true) {
+  return DIRS.filter(([dr, dc]) => (diag || !dr || !dc) && (back || dc > 0 || (dc === 0 && dr > 0)));
+}
+
+export const options = [
+  { key: "size", label: "Grille", icon: "🔠",
+    values: [[10, "10 x 10", "9 mots"], [12, "12 x 12", "13 mots"], [14, "14 x 14", "16 mots"]], def: 12 },
+  { key: "theme", label: "Thème", icon: "🎨",
+    values: [["", "Au hasard"], ["Animaux", "Animaux"], ["Sports", "Sports"], ["Pays", "Pays"], ["Espace", "Espace"], ["Cuisine", "Cuisine"],
+      ["Musique", "Musique"], ["Métiers", "Métiers"], ["Fruits et légumes", "Fruits"]], def: "" },
+  { key: "diag", label: "Diagonales", icon: "↗️",
+    values: [[true, "Oui", "8 directions"], [false, "Non", "Lignes droites"]], def: true },
+  { key: "back", label: "Mots à l'envers", icon: "🔄",
+    values: [[true, "Oui", "Dans tous les sens"], [false, "Non", "Sens de lecture"]], def: true },
+  { key: "list", label: "Liste des mots", icon: "📝",
+    values: [["full", "Complète", "Mots en entier"], ["hint", "Initiales", "Première lettre"]], def: "full" },
+];
+export const modes = [
+  { id: "classique", name: "Classique", emoji: "🔍", desc: "Grille 12 x 12, mots cachés dans tous les sens.", set: { size: 12, theme: "", diag: true, back: true, list: "full" } },
+  { id: "debutant", name: "Débutant", emoji: "🌱", desc: "Petite grille, mots à l'endroit, sans diagonales.", set: { size: 10, theme: "", diag: false, back: false, list: "full" } },
+  { id: "detective", name: "Détective", emoji: "🕵️", desc: "Tu ne vois que l'initiale et la longueur des mots.", set: { size: 12, theme: "", diag: true, back: true, list: "hint" } },
+  { id: "geant", name: "Géant", emoji: "🧩", desc: "Grille 14 x 14 et 16 mots à débusquer.", set: { size: 14, theme: "", diag: true, back: true, list: "full" } },
+];
+const optVal = (key, v) => {
+  const o = options.find((x) => x.key === key);
+  return o.values.some((x) => x[0] === v) ? v : o.def;
+};
 const FREQ = "EEEEEEAAAAASSSSIIIIITTTTNNNNRRRRUUUULLLOOOODDDCCCPPMMMVQFBGHJXYZ";
 
-export function generate(rng, size, theme, count) {
+export function generate(rng, size, theme, count, dirs = DIRS) {
   const pool = rng.shuffle(THEMES[theme].split(" ").filter((w) => w.length <= size));
+  // après plusieurs échecs, on se limite aux sens de lecture (plus facile à caser)
+  const fwd = dirsFor(true, false);
+  const easy = dirs.filter((d) => fwd.includes(d)).length ? dirs.filter((d) => fwd.includes(d)) : dirs;
   for (let attempt = 0; attempt < 30; attempt++) {
     const g = Array(size * size).fill("");
     const words = [];
@@ -31,7 +63,7 @@ export function generate(rng, size, theme, count) {
       if (words.length >= count) break;
       let placed = false;
       for (let t = 0; t < 120 && !placed; t++) {
-        const [dr, dc] = attempt < 20 ? rng.pick(DIRS) : rng.pick(DIRS.slice(0, 4));
+        const [dr, dc] = rng.pick(attempt < 20 ? dirs : easy);
         const r0 = rng.int(size), c0 = rng.int(size);
         const r1 = r0 + dr * (w.length - 1), c1 = c0 + dc * (w.length - 1);
         if (r1 < 0 || r1 >= size || c1 < 0 || c1 >= size) continue;
@@ -63,13 +95,14 @@ export function lineCells(size, a, b) {
 }
 
 export function setup(players, settings, rng) {
-  const size = settings.size || 12;
+  const size = optVal("size", settings.size);
   const themes = Object.keys(THEMES);
   const theme = themes.includes(settings.theme) ? settings.theme : rng.pick(themes);
-  const { grid, words } = generate(rng, size, theme, size >= 14 ? 16 : size >= 12 ? 13 : 9);
+  const diag = optVal("diag", settings.diag), back = optVal("back", settings.back), list = optVal("list", settings.list);
+  const { grid, words } = generate(rng, size, theme, size >= 14 ? 16 : size >= 12 ? 13 : 9, dirsFor(diag, back));
   const scores = {};
   players.forEach((p) => (scores[p.id] = 0));
-  return { ids: players.map((p) => p.id), size, theme, grid, words, scores, last: null, level: settings.level || 2 };
+  return { ids: players.map((p) => p.id), size, theme, diag, back, list, grid, words, scores, last: null, level: settings.level || 2 };
 }
 
 const allFound = (s) => s.words.every((w) => w.by);

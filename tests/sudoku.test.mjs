@@ -38,3 +38,52 @@ test("points, erreurs, bonus de ligne et fin", () => {
 test("parties complètes avec robots", () => {
   for (let seed = 1; seed <= 6; seed++) playout(G, 1 + (seed % 4), seed, { settings: { level: 1 + (seed % 3) } });
 });
+
+test("options et modes bien formés", () => {
+  const keys = G.options.map((o) => o.key);
+  assert.ok(G.options.length >= 2 && G.options.length <= 5);
+  for (const o of G.options) {
+    assert.ok(o.values.some((v) => v[0] === o.def), o.key);
+    for (const v of o.values) { assert.ok(v[1].length <= 12, v[1]); if (v[2]) assert.ok(v[2].length <= 18, v[2]); }
+  }
+  assert.ok(!keys.includes("level") && !keys.includes("turnTime"));
+  assert.ok(G.modes.length >= 3 && G.modes.length <= 4);
+  for (const m of G.modes) for (const k of Object.keys(m.set)) assert.ok(keys.includes(k), m.id + " : " + k);
+  assert.equal(G.modes[0].name, "Classique");
+  assert.deepEqual(G.modes[0].set, Object.fromEntries(G.options.map((o) => [o.key, o.def])));
+  const s = start(G, [{ id: "a" }], { diff: 8, penalty: "x", hints: -2 }, 1, 0);
+  assert.equal(s.diff, 2); assert.equal(s.penalty, 1); assert.equal(s.hints.a, 0);
+});
+
+test("chaque mode se joue jusqu'au bout", () => {
+  for (const m of G.modes) for (const n of [1, 4]) playout(G, n, 3 + n, { settings: { ...m.set, level: 1 + (n % 3) } });
+});
+
+test("effet concret des options", () => {
+  // difficulté : nombre de chiffres donnés, indépendant du niveau des robots
+  const given = (diff, level) => start(G, [{ id: "a" }], { diff, level }, 9, 0).puz.filter(Boolean).length;
+  assert.ok(given(1, 3) > given(2, 3) && given(2, 1) > given(3, 1));
+  assert.ok(given(3, 1) <= G.CLUES[3] + 6);
+  // pénalité par erreur
+  for (const penalty of [0, 1, 3]) {
+    let s = start(G, [{ id: "a" }], { penalty }, 2, 0);
+    const i = s.grid.findIndex((v) => !v);
+    s = apply(G, s, "a", { type: "place", cell: i, val: (s.sol[i] % 9) + 1 });
+    assert.equal(s.scores.a, 0 - penalty || 0); assert.equal(s.errors.a, 1);
+  }
+  // coups de pouce : révèlent une case, sans points, en nombre limité
+  let s = start(G, [{ id: "a" }, { id: "b" }], { hints: 3 }, 2, 0);
+  assert.equal(s.hints.a, 3);
+  for (let k = 0; k < 3; k++) {
+    const i = s.grid.findIndex((v) => !v);
+    s = apply(G, s, "a", { type: "hint", cell: i });
+    assert.equal(s.grid[i], s.sol[i]); assert.equal(s.owner[i], G.HINT);
+  }
+  assert.equal(s.scores.a, 0); assert.equal(s.hints.a, 0); assert.equal(s.hints.b, 3);
+  assert.throws(() => apply(G, s, "a", { type: "hint", cell: s.grid.findIndex((v) => !v) }), /coup de pouce/);
+  const c0 = start(G, [{ id: "a" }], {}, 2, 0);
+  assert.throws(() => apply(G, c0, "a", { type: "hint", cell: c0.grid.findIndex((v) => !v) }), /coup de pouce/);
+  // les robots se servent de leurs coups de pouce
+  const { st } = playout(G, 2, 7, { settings: { diff: 3, hints: 6 } });
+  assert.ok(st.owner.includes(G.HINT));
+});

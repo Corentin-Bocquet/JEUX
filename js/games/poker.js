@@ -7,9 +7,42 @@ export const meta = {
   rules: ["Chacun reçoit 2 cartes cachées, puis 5 cartes communes arrivent en 3 temps.",
     "À chaque tour d'enchères : passe, suis, relance ou couche-toi.",
     "La meilleure main de 5 cartes gagne le pot.",
-    "Les blinds montent toutes les 6 mains.",
-    "Le dernier avec des jetons gagne, ou le plus riche quand le nombre de mains prévu est atteint."],
+    "Par défaut, les blinds partent à 10/20 et montent toutes les 6 mains.",
+    "Le dernier avec des jetons gagne, ou le plus riche quand le nombre de mains prévu est atteint.",
+    "Options : nombre de mains, jetons de départ, blinds de départ et rythme de montée (ou blinds fixes)."],
 };
+
+// ------------------------------------------------ réglages
+export const options = [
+  { key: "hands", label: "Nombre de mains", icon: "🃏",
+    values: [[10, "10", "Express"], [20, "20", "Standard"], [40, "40", "Marathon"]], def: 20 },
+  { key: "chips", label: "Jetons de départ", icon: "🪙",
+    values: [[500, "500", "Tapis court"], [1000, "1000", "Standard"], [2000, "2000", "Gros tapis"]], def: 1000 },
+  { key: "blind", label: "Blinds de départ", icon: "💰",
+    values: [[10, "5 / 10", "Petites"], [20, "10 / 20", "Standard"], [50, "25 / 50", "Grosses"]], def: 20 },
+  { key: "blindUp", label: "Montée des blinds", icon: "📈",
+    values: [[0, "Fixes", "Ne montent jamais"], [10, "10 mains", "Tranquille"], [6, "6 mains", "Standard"], [3, "3 mains", "Turbo"]], def: 6 },
+];
+export const modes = [
+  { id: "classique", name: "Classique", emoji: "♠️", desc: "20 mains, 1000 jetons, blinds 10/20 qui montent toutes les 6 mains.",
+    set: { hands: 20, chips: 1000, blind: 20, blindUp: 6 } },
+  { id: "turbo", name: "Turbo", emoji: "⚡", desc: "Tapis courts et blinds qui grimpent toutes les 3 mains : ça va vite.",
+    set: { hands: 10, chips: 500, blind: 20, blindUp: 3 } },
+  { id: "deep", name: "Gros tapis", emoji: "🏦", desc: "2000 jetons, petites blinds qui montent lentement : place à la stratégie.",
+    set: { hands: 40, chips: 2000, blind: 10, blindUp: 10 } },
+  { id: "fixes", name: "Blinds fixes", emoji: "🧊", desc: "Les blinds ne bougent jamais, comme dans une partie entre amis.",
+    set: { hands: 20, chips: 1000, blind: 20, blindUp: 0 } },
+];
+// valeur d'un réglage : une valeur absente ou invalide retombe sur le défaut.
+// loose : accepte aussi un entier positif hors liste (anciennes parties).
+export function opt(settings, key, loose = false) {
+  const o = options.find((x) => x.key === key);
+  const v = settings ? settings[key] : undefined;
+  const hit = o.values.find((x) => String(x[0]) === String(v));
+  if (hit) return hit[0];
+  if (loose && Number.isInteger(+v) && +v > 0 && +v <= 100000) return +v;
+  return o.def;
+}
 
 // ------------------------------------------------ évaluation des mains
 export const HAND_NAMES = ["Carte haute", "Paire", "Double paire", "Brelan", "Quinte", "Couleur", "Full", "Carré", "Quinte flush"];
@@ -54,10 +87,11 @@ export const handName = (score) => HAND_NAMES[Math.floor(score / 15 ** 5)];
 // ------------------------------------------------ partie
 export function setup(players, settings, rng) {
   const chips = {};
-  const start = settings.chips || 1000;
+  const start = opt(settings, "chips", true);
   players.forEach((p) => (chips[p.id] = start));
-  const s = { order: players.map((p) => p.id), chips, dealer: rng.int(players.length) - 1, sb: 10, bb: 20,
-    handNo: 0, maxHands: settings.hands || 20, out: [], hand: null, last: null, over: false };
+  const bb = opt(settings, "blind");
+  const s = { order: players.map((p) => p.id), chips, dealer: rng.int(players.length) - 1, sb: bb / 2, bb,
+    blindUp: opt(settings, "blindUp"), handNo: 0, maxHands: opt(settings, "hands", true), out: [], hand: null, last: null, over: false };
   if (s.dealer < 0) s.dealer = players.length - 1;
   startHand(s, rng.int(2 ** 32));
   return s;
@@ -78,8 +112,9 @@ function startHand(s, seed) {
   const live = alive(s);
   if (live.length <= 1 || s.handNo >= s.maxHands) { s.over = true; s.hand = null; return; }
   s.handNo++;
-  if (s.handNo > 1 && (s.handNo - 1) % 6 === 0) {
-    s.sb = Math.round((s.sb * 1.5) / 10) * 10; s.bb = s.sb * 2;
+  const every = s.blindUp ?? 6; // 0 : blinds fixes
+  if (every > 0 && s.handNo > 1 && (s.handNo - 1) % every === 0) {
+    s.sb = Math.max(s.sb + 5, Math.round((s.sb * 1.5) / 10) * 10); s.bb = s.sb * 2;
   }
   const has = (id) => s.chips[id] > 0;
   s.dealer = nextSeat(s, s.dealer, has);

@@ -1,6 +1,6 @@
 import { h } from "../ui.js";
 import { nameOf } from "./common.js";
-import { simulate, PINS, LANE, frameScores, totalScore, toAct, LIMITS } from "../games/bowling.js";
+import { simulate, PINS, LANE, frameScores, totalScore, toAct, LIMITS, envOf } from "../games/bowling.js";
 import { itemById, equipOf } from "../catalog.js";
 
 export const scoreOf = (s, id) => totalScore(s.rolls[id], s.n);
@@ -61,6 +61,10 @@ export function mount(root, ctx0) {
     const y0 = Math.max(0, camY - 2.6);
     quad(-0.75, 0.75, y0, far, "#16162E");
     quad(-0.64, -0.5, y0, far, "#3A3A55"); quad(0.5, 0.64, y0, far, "#3A3A55");
+    if (ctx.state.bump) {
+      // bumpers : barrières jaunes le long des rigoles
+      quad(-0.6, -0.5, y0, LANE.L - 0.2, "#FFC800"); quad(0.5, 0.6, y0, LANE.L - 0.2, "#FFC800");
+    }
     const a = proj(-0.5, y0), b = proj(0.5, far);
     const wood = g.createLinearGradient(0, a.Y, 0, b.Y);
     wood.addColorStop(0, "#E9B979"); wood.addColorStop(0.5, "#D9A462"); wood.addColorStop(1, "#C98F4E");
@@ -148,6 +152,21 @@ export function mount(root, ctx0) {
     });
   }
 
+  function drawWind(w) {
+    // indicateur de vent : flèche et force
+    if (!ctx.state.windLvl) return;
+    const bx = 10, by = 12;
+    g.fillStyle = "rgba(10,10,30,.55)"; g.beginPath(); g.roundRect ? g.roundRect(bx, by - 6, 84, 40, 10) : g.rect(bx, by - 6, 84, 40); g.fill();
+    g.fillStyle = "#fff"; g.font = "700 11px system-ui, sans-serif"; g.textAlign = "center";
+    g.fillText("Vent", bx + 42, by + 8);
+    const len = Math.min(30, Math.abs(w) * 90), cx = bx + 42, cy = by + 22, d = w < 0 ? -1 : 1;
+    if (!w) { g.fillText("calme", cx, cy + 4); g.textAlign = "start"; return; }
+    g.strokeStyle = "#7FD3FF"; g.fillStyle = "#7FD3FF"; g.lineWidth = 3; g.lineCap = "round";
+    g.beginPath(); g.moveTo(cx - d * len, cy); g.lineTo(cx + d * len, cy); g.stroke();
+    g.beginPath(); g.moveTo(cx + d * (len + 6), cy); g.lineTo(cx + d * len, cy - 5); g.lineTo(cx + d * len, cy + 5); g.closePath(); g.fill();
+    g.textAlign = "start";
+  }
+
   function paint() {
     const s = ctx.state;
     g.clearRect(0, 0, W, Hh);
@@ -167,11 +186,12 @@ export function mount(root, ctx0) {
       g.strokeStyle = "rgba(255,255,255,.55)"; g.setLineDash([6, 8]); g.lineWidth = 3; g.beginPath(); g.moveTo(a.X, a.Y); g.lineTo(b.X, b.Y); g.stroke(); g.setLineDash([]);
     }
     drawRack(pinsView ? pinsView.map((p, i) => s.last && s.last.before[i] && !p[2]) : (idleStanding || s.standing));
+    drawWind(anim ? (anim.last.env ? anim.last.env.wind : 0) : envOf(s).wind);
   }
 
   // ---------------- animation d'un lancer
   function play(last) {
-    const sim = simulate(last.thr, last.before, true);
+    const sim = simulate(last.thr, last.before, true, last.env || {});
     let i = 0;
     anim = { last, sim };
     ctx.sfx.roll();
@@ -246,7 +266,9 @@ export function mount(root, ctx0) {
     const cur = s.order[s.cur];
     info.className = "turnmsg" + (mine ? " me" : "");
     info.textContent = s.done ? "Partie terminée" : mine ? `À toi ! Frame ${s.frame + 1}, boule ${s.ball + 1}` : `${nameOf(ctx, cur)} lance… (frame ${s.frame + 1})`;
-    hint.textContent = mine && !anim ? "Glisse la boule en bas pour te placer, puis lance-la d'un geste vers le haut. Courbe ton geste pour donner de l'effet." : "";
+    const w = envOf(s).wind;
+    const windTxt = s.windLvl && w ? ` Le vent pousse vers la ${w < 0 ? "gauche" : "droite"}, compense !` : "";
+    hint.textContent = mine && !anim ? "Glisse la boule en bas pour te placer, puis lance-la d'un geste vers le haut. Courbe ton geste pour donner de l'effet." + windTxt : "";
     btns.replaceChildren(mine && !anim ? h("button", { class: "btn small ghost", onclick: () => ctx.act({ type: "throw", x: aimX, vx: (0.06 - aimX) / LANE.L * 9, vy: 9, spin: 0 }) }, "Lancer droit vers les quilles") : "");
     drawBoard();
   }

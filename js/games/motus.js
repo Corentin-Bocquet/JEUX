@@ -8,8 +8,36 @@ export const meta = {
   rules: ["Tout le monde cherche le même mot en même temps. La première lettre est donnée.",
     "Rouge : bonne lettre bien placée. Jaune : lettre présente ailleurs. Bleu : absente.",
     "Plus tu trouves vite, plus tu marques. +20 pour le premier qui trouve.",
-    "Après toutes les manches, le meilleur total gagne."],
+    "Après toutes les manches, le meilleur total gagne.",
+    "Options : longueur du mot, nombre de manches et d'essais, première lettre donnée ou non, bonus du premier qui trouve."],
 };
+
+// ------------------------------------------------ réglages
+export const options = [
+  { key: "len", label: "Lettres", icon: "🔤",
+    values: [[5, "5"], [6, "6"], [7, "7"]], def: 6 },
+  { key: "rounds", label: "Manches", icon: "🔁",
+    values: [[3, "3", "Express"], [5, "5", "Standard"], [8, "8", "Marathon"]], def: 5 },
+  { key: "tries", label: "Essais", icon: "🎯",
+    values: [[5, "5", "Serré"], [6, "6", "Classique"], [7, "7", "Confort"]], def: 6 },
+  { key: "first", label: "1re lettre", icon: "🅰️",
+    values: [[true, "Donnée"], [false, "Cachée", "Le mot est libre"]], def: true },
+  { key: "bonus", label: "Bonus rapidité", icon: "⚡",
+    values: [[0, "Aucun"], [20, "+20", "Au premier"], [50, "+50", "Au premier"]], def: 20 },
+];
+export const modes = [
+  { id: "classique", name: "Classique", emoji: "🟥", desc: "6 lettres, 5 manches, 6 essais, 1re lettre donnée.", set: { len: 6, rounds: 5, tries: 6, first: true, bonus: 20 } },
+  { id: "express", name: "Express", emoji: "⚡", desc: "3 manches de mots courts, gros bonus au plus rapide.", set: { len: 5, rounds: 3, tries: 6, first: true, bonus: 50 } },
+  { id: "aveugle", name: "À l'aveugle", emoji: "🙈", desc: "Aucune lettre donnée, mais 7 essais.", set: { len: 6, rounds: 5, tries: 7, first: false, bonus: 20 } },
+  { id: "expert", name: "Expert", emoji: "🧠", desc: "7 lettres, 5 essais, rien n'est donné.", set: { len: 7, rounds: 5, tries: 5, first: false, bonus: 20 } },
+];
+// valeur d'un réglage, ou le défaut si absente ou invalide
+export function opt(settings, key) {
+  const o = options.find((x) => x.key === key);
+  const v = settings ? settings[key] : undefined;
+  const hit = o.values.find((x) => x[0] === v || (v != null && String(x[0]) === String(v)));
+  return hit ? hit[0] : o.def;
+}
 
 const sets = {};
 export function dico(len) {
@@ -25,6 +53,10 @@ export function solutions(len) {
   if (!sols[len]) sols[len] = SOLUTIONS.split(/\s+/).filter((w) => w.length === len && dico(len).has(w));
   return sols[len];
 }
+const arrs = {};
+const dicoList = (len) => arrs[len] || (arrs[len] = [...dico(len)]);
+const solSets = {};
+const solSet = (len) => solSets[len] || (solSets[len] = new Set(solutions(len)));
 export const norm = (w) => String(w || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/Œ/g, "OE").replace(/[^A-Z]/g, "");
 
 // 2 bien placée, 1 mal placée, 0 absente
@@ -54,15 +86,18 @@ function newRound(s, seed) {
 }
 
 export function setup(players, settings, rng) {
-  const len = [5, 6, 7].includes(settings.len) ? settings.len : 6;
-  const s = { ids: players.map((p) => p.id), len, rounds: settings.rounds || 5, roundNo: 1, scores: {}, used: [],
-    history: [], done: false, level: settings.level || 2 };
+  const s = { ids: players.map((p) => p.id), len: opt(settings, "len"), rounds: opt(settings, "rounds"), roundNo: 1, scores: {}, used: [],
+    history: [], done: false, level: settings.level || 2,
+    tries: opt(settings, "tries"), first: opt(settings, "first"), bonus: opt(settings, "bonus") };
   players.forEach((p) => (s.scores[p.id] = 0));
   newRound(s, rng.int(2 ** 32));
   return s;
 }
 
 export const MAX_TRIES = 6;
+// les anciennes parties n'ont pas ces champs
+export const triesOf = (s) => s.tries || MAX_TRIES;
+export const firstGiven = (s) => s.first !== false;
 export function toAct(s) { return s.done ? [] : s.ids.filter((id) => s.status[id] === "playing"); }
 
 function endRoundIfNeeded(s, seed) {
@@ -76,7 +111,7 @@ function endRoundIfNeeded(s, seed) {
 export function check(s, word) {
   const w = norm(word);
   if (w.length !== s.len) return `Le mot fait ${s.len} lettres`;
-  if (w[0] !== s.word[0]) return `Le mot commence par ${s.word[0]}`;
+  if (firstGiven(s) && w[0] !== s.word[0]) return `Le mot commence par ${s.word[0]}`;
   if (!dico(s.len).has(w)) return "Mot inconnu du dictionnaire";
   return null;
 }
@@ -97,10 +132,10 @@ export function reduce(s, pid, a) {
   board.push({ w, m });
   if (w === s.word) {
     s.status[pid] = "found";
-    let pts = (MAX_TRIES + 1 - board.length) * 10;
-    if (!s.firstFinder) { s.firstFinder = pid; pts += 20; }
+    let pts = (triesOf(s) + 1 - board.length) * 10;
+    if (!s.firstFinder) { s.firstFinder = pid; pts += s.bonus ?? 20; }
     s.scores[pid] += pts;
-  } else if (board.length >= MAX_TRIES) s.status[pid] = "out";
+  } else if (board.length >= triesOf(s)) s.status[pid] = "out";
   endRoundIfNeeded(s, a.seed || 1);
   return s;
 }
@@ -112,20 +147,28 @@ export function result(s) {
 
 // robot : propose un mot compatible avec ses indices
 export function consistent(w, board) {
-  return board.every(({ w: g, m }) => marks(g, w).join() === m.join());
+  return board.every(({ w: g, m }) => {
+    // tri rapide : les lettres bien placées doivent coïncider, les autres non
+    for (let i = 0; i < m.length; i++) if ((m[i] === 2) !== (w[i] === g[i])) return false;
+    const mm = marks(g, w);
+    for (let i = 0; i < m.length; i++) if (mm[i] !== m[i]) return false;
+    return true;
+  });
 }
 export function bot(s, pid, rng) {
   const board = s.boards[pid];
-  const pool = s.level >= 3 ? solutions(s.len) : [...dico(s.len)];
-  let cands = pool.filter((w) => w[0] === s.word[0] && consistent(w, board));
-  if (!cands.length) cands = solutions(s.len).filter((w) => w[0] === s.word[0] && consistent(w, board));
+  const start = (w) => !firstGiven(s) || w[0] === s.word[0];
+  const pool = s.level >= 3 ? solutions(s.len) : dicoList(s.len);
+  let cands = pool.filter((w) => start(w) && consistent(w, board));
+  if (!cands.length) cands = solutions(s.len).filter((w) => start(w) && consistent(w, board));
   if (s.level === 1 && rng.next() < 0.35) {
-    const loose = [...dico(s.len)].filter((w) => w[0] === s.word[0]);
+    const loose = dicoList(s.len).filter(start);
     return { type: "guess", word: rng.pick(loose) };
   }
   if (!cands.length) return { type: "guess", word: s.word };
   // préfère les mots courants quand il y en a
-  const common = cands.filter((w) => solutions(s.len).includes(w));
+  const sol = solSet(s.len);
+  const common = cands.filter((w) => sol.has(w));
   return { type: "guess", word: rng.pick(common.length && rng.next() < 0.7 ? common : cands) };
 }
 export function auto() { return { type: "giveup" }; }

@@ -53,3 +53,85 @@ test("parties complètes de 1 à 6 joueurs", () => {
   assert.ok(best > 180, "le robot doit savoir marquer : " + best);
   timeoutPlayout(G, 3, 2);
 });
+
+// ------------------------------------------------ options et modes
+function checkShape(G, legacy) {
+  const keys = G.options.map((o) => o.key);
+  assert.ok(keys.length >= 2 && keys.length <= 5);
+  assert.equal(new Set(keys).size, keys.length);
+  assert.ok(!keys.includes("level") && !keys.includes("turnTime"));
+  for (const k of legacy) assert.ok(keys.includes(k), "réglage existant conservé : " + k);
+  for (const o of G.options) {
+    assert.ok(o.label && o.icon);
+    assert.ok(o.values.some((v) => v[0] === o.def), o.key + " : def dans values");
+    for (const v of o.values) {
+      assert.ok(["number", "string", "boolean"].includes(typeof v[0]));
+      assert.ok(v[1].length <= 12, "libellé trop long : " + v[1]);
+      assert.ok(v[2] == null || v[2].length <= 18, "indication trop longue : " + v[2]);
+    }
+  }
+  assert.ok(G.modes.length >= 3 && G.modes.length <= 4);
+  assert.equal(G.modes[0].name, "Classique");
+  const defs = Object.fromEntries(G.options.map((o) => [o.key, o.def]));
+  assert.deepEqual(G.modes[0].set, defs, "le mode classique = défauts");
+  for (const m of G.modes) {
+    assert.ok(m.id && m.name && m.emoji && m.desc);
+    for (const [k, v] of Object.entries(m.set)) {
+      const o = G.options.find((x) => x.key === k);
+      assert.ok(o, m.id + " : clé inconnue " + k);
+      assert.ok(o.values.some((x) => x[0] === v), m.id + " : valeur hors liste pour " + k);
+    }
+  }
+  const src = JSON.stringify([G.options, G.modes, G.meta]);
+  assert.ok(!src.includes(String.fromCharCode(0x2014)), "pas de tiret cadratin");
+}
+
+test("options et modes bien formés", () => checkShape(G, []));
+
+test("chaque mode se joue jusqu'au bout, 1 et 6 joueurs", () => {
+  G.modes.forEach((m, k) => {
+    for (const n of [1, 6]) {
+      const { st } = playout(G, n, 900 + k * 10 + n, { settings: m.set,
+        onStep(s) { assert.ok(s.rolls <= m.set.rolls, "le robot respecte le nombre de lancers"); } });
+      const nCats = m.set.sheet === "quick" ? 7 : 13;
+      assert.equal(st.turnNo, nCats);
+      for (const id of st.order) {
+        assert.equal(Object.keys(st.sheets[id]).length, nCats);
+        assert.ok(Object.values(st.sheets[id]).every((v) => v != null));
+      }
+    }
+  });
+});
+
+test("nombre de lancers par tour", () => {
+  for (const rolls of [2, 3, 4]) {
+    let s = start(G, [{ id: "a" }], { rolls }, 1, 0);
+    for (let k = 0; k < rolls; k++) s = apply(G, s, "a", { type: "roll", seed: k + 1 });
+    assert.throws(() => apply(G, s, "a", { type: "roll", seed: 9 }), /Plus de lancer/);
+  }
+  assert.equal(start(G, [{ id: "a" }], { rolls: 7 }, 1, 0).maxRolls, 3, "valeur invalide : défaut");
+});
+
+test("bonus de la partie haute", () => {
+  const sheet = { c1: 3, c2: 6, c3: 9, c4: 12, c5: 15, c6: 18 };
+  assert.equal(G.totals(sheet, 50).total, 113);
+  assert.equal(G.totals(sheet, 0).total, 63);
+  const s = start(G, [{ id: "a" }], { bonus: 50 }, 1, 0);
+  Object.assign(s.sheets.a, sheet);
+  s.done = true;
+  assert.equal(G.result(s).ranking[0].score, 113);
+  s.bonus = 0;
+  assert.equal(G.result(s).ranking[0].score, 63);
+});
+
+test("feuille rapide : partie basse seulement", () => {
+  let s = start(G, [{ id: "a" }], { sheet: "quick" }, 1, 0);
+  assert.deepEqual(Object.keys(s.sheets.a), ["brelan", "carre", "full", "petite", "grande", "yams", "chance"]);
+  s = apply(G, s, "a", { type: "roll", seed: 3 });
+  assert.throws(() => apply(G, s, "a", { type: "score", cat: "c1" }), /inconnue/);
+  for (const cat of Object.keys(s.sheets.a)) {
+    if (s.rolls === 0) s = apply(G, s, "a", { type: "roll", seed: 5 });
+    s = apply(G, s, "a", { type: "score", cat });
+  }
+  assert.ok(s.result, "fini en 7 tours");
+});

@@ -1,6 +1,6 @@
 import { h } from "../ui.js";
 import { nameOf } from "./common.js";
-import { candidates } from "../games/sudoku.js";
+import { candidates, HINT } from "../games/sudoku.js";
 
 export const scoreOf = (s, id) => s.scores[id];
 const COLORS = ["#1CB0F6", "#FF9600", "#CE82FF", "#58CC02"];
@@ -40,12 +40,15 @@ export function mount(root, ctx0) {
       if (s.last && s.last.cell === i && !s.last.ok && s.last.id === ctx.me) cls.push("wrong");
       if (s.last && s.last.cell === i && s.last.ok) cls.push("pop");
       const owner = s.owner[i];
-      const style = owner && owner !== "" ? `color:${colorOf(owner)}` : null;
+      const style = owner === HINT ? "color:var(--txt);opacity:.6;font-style:italic" : owner && owner !== "" ? `color:${colorOf(owner)}` : null;
       const n = notes[i];
       grid.append(h("button", { class: cls.join(" ") + (owner === "" ? " given" : ""), style, "aria-label": `Ligne ${r + 1} colonne ${c + 1}${v ? " : " + v : ""}`,
         onclick: () => { sel = v ? -1 : i; ctx.sfx.tap(); draw(ctx); } },
         v ? String(v) : n && n.size ? h("span", { class: "notes" }, [1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => h("i", null, n.has(d) ? d : ""))) : ""));
     }
+    const pen = s.penalty ?? 1;
+    // bouton coup de pouce seulement si l'option est active et que je joue
+    const myHints = s.hintsMax > 0 && s.hints && s.hints[ctx.me] != null ? s.hints[ctx.me] : null;
     const remaining = (d) => 9 - s.grid.filter((x) => x === d).length;
     const pad = h("div", { class: "sd-pad" }, [1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => h("button", { class: "sd-key", disabled: !remaining(d),
       onclick: () => press(ctx, d) }, String(d), h("small", null, remaining(d) || ""))));
@@ -54,12 +57,14 @@ export function mount(root, ctx0) {
         h("span", { class: "dim" }, `${s.grid.filter((x) => !x).length} cases vides`),
         h("span", { class: "row gap" }, s.ids.map((id) => h("span", { class: "row gap", style: { color: colorOf(id) } }, "●", nameOf(ctx, id), " ", h("b", null, s.scores[id]))))),
       grid,
-      h("div", { class: "row gap center", style: { margin: "10px 0" } },
+      h("div", { class: "row gap center", style: { margin: "10px 0", flexWrap: "wrap" } },
         h("button", { class: "chip" + (notesMode ? " on" : ""), onclick: () => { notesMode = !notesMode; draw(ctx); } }, notesMode ? "Notes : oui" : "Notes : non"),
         h("button", { class: "chip", onclick: () => { if (sel >= 0) { delete notes[sel]; draw(ctx); } } }, "Effacer"),
-        h("button", { class: "chip", onclick: () => { if (sel >= 0) { notes[sel] = new Set(candidates(s.grid, sel)); draw(ctx); } } }, "Indice")),
+        h("button", { class: "chip", onclick: () => { if (sel >= 0) { notes[sel] = new Set(candidates(s.grid, sel)); draw(ctx); } } }, "Candidats"),
+        myHints != null ? h("button", { class: "chip", disabled: !myHints,
+          onclick: () => { if (sel < 0) { ctx.toast("Choisis d'abord une case"); return; } ctx.act({ type: "hint", cell: sel }); } }, `Coup de pouce (${myHints})`) : null),
       pad,
-      h("p", { class: "tiny dim center" }, "Bon chiffre +1, ligne/colonne/carré complété +3, erreur -1."));
+      h("p", { class: "tiny dim center" }, `Bon chiffre +1, ligne/colonne/carré complété +3, erreur ${pen ? "-" + pen : "sans pénalité"}.`));
   }
   function press(ctx, d) {
     if (sel < 0) { ctx.toast("Choisis d'abord une case"); return; }

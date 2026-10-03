@@ -3,13 +3,13 @@ import { cardHTML, cardBackHTML, feltStyle, turnLine, nameOf } from "./common.js
 import { toAct, canPlay } from "../games/huit.js";
 import { rankOf, SUIT_SYM, SUIT_NAME, label } from "../games/cards.js";
 
-export const scoreOf = (s, id) => s.hands[id].length + " c.";
-export const scoreLabel = (v) => `${v} pts restants`;
+export const scoreOf = (s, id) => (s.target ? `${s.scores[id]} pts` : s.hands[id].length + " c.");
+export const scoreLabel = (v) => `${v} pts`;
 
 export function mount(root, ctx0) {
   const el = h("div", { class: "g-cards" });
   root.append(el);
-  let lastLog = null;
+  let lastLog = null, seenRound = ctx0.state.lastRound ? ctx0.state.lastRound.manche : 0, roundMsg = null, roundT = null;
   function update(ctx) {
     const s = ctx.state;
     const who = toAct(s);
@@ -19,10 +19,17 @@ export function mount(root, ctx0) {
     const logKey = JSON.stringify(s.log);
     if (logKey !== lastLog && s.log) { s.log.t === "play" ? ctx.sfx.card() : null; }
     lastLog = logKey;
+    if (s.lastRound && s.lastRound.manche !== seenRound) {
+      seenRound = s.lastRound.manche;
+      const myPts = s.lastRound.got[ctx.me];
+      roundMsg = `${nameOf(ctx, s.lastRound.winner)} remporte la manche ${s.lastRound.manche}` + (myPts != null ? ` · tu prends ${myPts} pts` : "");
+      clearTimeout(roundT);
+      roundT = setTimeout(() => { roundMsg = null; update(ctx); }, 4000);
+    }
     const others = s.order.filter((id) => id !== ctx.me);
     const opp = h("div", { class: "opps" }, others.map((id) => h("div", { class: "opp" + (who.includes(id) ? " turn" : "") },
       h("div", { class: "fan", html: Array.from({ length: Math.min(s.hands[id].length, 8) }, () => cardBackHTML(ctx.skin.deck, 26)).join("") }),
-      h("div", { class: "small" }, nameOf(ctx, id), " · ", s.hands[id].length))));
+      h("div", { class: "small" }, nameOf(ctx, id), " · ", s.hands[id].length, s.target ? h("span", { class: "dim" }, ` · ${s.scores[id]} pts`) : null))));
     const pile = h("div", { class: "pile-row" },
       h("button", { class: "deck-btn", disabled: !mine || s.drew, "aria-label": "Piocher", onclick: () => { ctx.sfx.card(); ctx.act({ type: "draw" }); },
         html: cardBackHTML(ctx.skin.deck, 64) + `<span class="cnt">${s.pile.length}</span>` }),
@@ -33,8 +40,11 @@ export function mount(root, ctx0) {
       return h("button", { class: "hcard", disabled: !ok, "aria-label": label(c), html: cardHTML(c, { playable: ok, dim: mine && !ok }),
         onclick: () => play(ctx, c) });
     }));
-    const msg = s.log ? logText(ctx, s.log) : "";
+    const msg = roundMsg || (s.log ? logText(ctx, s.log) : "");
+    const race = s.target ? h("div", { class: "small dim center" },
+      `Manche ${s.manche} · course à ${s.target} pts · toi : ${s.scores[ctx.me] ?? 0} pts`) : null;
     el.replaceChildren(
+      race,
       opp,
       h("div", { class: "felt", style: feltStyle(ctx.skin.table) }, pile, h("div", { class: "small center felt-msg" }, msg)),
       turnLine(ctx, who, s.drew ? "Pose la carte piochée ou passe" : "À toi : pose une carte ou pioche"),
@@ -50,7 +60,7 @@ export function mount(root, ctx0) {
     ctx.act({ type: "play", card: c });
   }
   update(ctx0);
-  return { update };
+  return { update, destroy() { clearTimeout(roundT); } };
 }
 
 function logText(ctx, l) {

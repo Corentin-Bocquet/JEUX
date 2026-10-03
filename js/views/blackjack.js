@@ -1,6 +1,6 @@
 import { h, fmt } from "../ui.js";
 import { cardHTML, cardBackHTML, feltStyle, turnLine, nameOf } from "./common.js";
-import { toAct, value, isBJ, MIN, MAX } from "../games/blackjack.js";
+import { toAct, value, isBJ, MIN, maxBetOf } from "../games/blackjack.js";
 
 export const scoreOf = (s, id) => fmt(s.chips[id]);
 export const scoreLabel = (v) => `${fmt(v)} jetons`;
@@ -16,6 +16,7 @@ export function mount(root, ctx0) {
     const seen = `${s.manche}:${s.phase}:${JSON.stringify(s.hands)}`;
     if (seen !== lastSeen) { ctx.sfx.card(); lastSeen = seen; }
     const chipsMe = s.chips[ctx.me] ?? 0;
+    const MAX = maxBetOf(s);
     bet = Math.max(MIN, Math.min(bet, Math.min(MAX, Math.floor(chipsMe / 10) * 10)));
     const showLast = s.phase !== "play" && s.last;
     const dealerCards = s.phase === "play" ? [s.dealer[0], null] : showLast ? s.last.dealer : [];
@@ -41,7 +42,8 @@ export function mount(root, ctx0) {
       const set = (v) => { bet = Math.max(MIN, Math.min(v, MAX, Math.floor(chipsMe / 10) * 10)); amt.textContent = fmt(bet); ctx.sfx.tap(); };
       controls = h("div", { class: "stack", style: { alignItems: "center" } },
         h("div", { class: "row gap center" }, h("button", { class: "btn ghost small", onclick: () => set(bet - 10) }, "-10"), amt, h("button", { class: "btn ghost small", onclick: () => set(bet + 10) }, "+10")),
-        h("div", { class: "row gap center wrap" }, [10, 50, 100, 250].map((v) => h("button", { class: "chip-btn c" + v, onclick: () => set(v) }, v))),
+        h("div", { class: "row gap center wrap" }, [10, 50, 100, 250].filter((v) => v <= MAX).map((v) => h("button", { class: "chip-btn c" + v, onclick: () => set(v) }, v)),
+          h("button", { class: "btn ghost small", onclick: () => set(Infinity) }, "Max")),
         h("button", { class: "btn gold", onclick: () => ctx.act({ type: "bet", amount: bet }) }, `Miser ${fmt(bet)}`));
     } else if (mine && s.phase === "play") {
       const hand = s.hands[ctx.me];
@@ -51,7 +53,7 @@ export function mount(root, ctx0) {
         hand.length === 2 && chipsMe >= s.bets[ctx.me] * 2 ? h("button", { class: "btn purple", onclick: () => ctx.act({ type: "double" }) }, "Doubler") : null);
     }
     el.replaceChildren(
-      h("div", { class: "small dim center" }, `Manche ${Math.min(s.manche, s.manches)} / ${s.manches}`),
+      h("div", { class: "small dim center" }, `Manche ${Math.min(s.manche, s.manches)} / ${s.manches} · sabot de ${s.decks || 6} jeu${(s.decks || 6) > 1 ? "x" : ""} (${s.shoe.length} cartes) · mise max ${MAX === Infinity ? "libre" : fmt(MAX)}`),
       h("div", { class: "felt bj-felt", style: feltStyle(ctx.skin.table) }, dealer, h("div", { class: "bj-arc" }, "LA BANQUE TIRE JUSQU'À 17 · BLACKJACK PAIE 3 POUR 2"), spots),
       turnLine(ctx, who, s.phase === "bet" ? "Place ta mise" : "Carte ou rester ?"),
       controls,
