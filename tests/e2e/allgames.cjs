@@ -39,7 +39,7 @@ const GAMES = (process.argv[3] || "puissance4,yams,huit,blackjack,poker,bataille
           if (a) { await ctl.act(a); n++; }
         }
         await new Promise((ok) => setTimeout(ok, game.meta.race ? 150 : 60));
-        if (game.meta.race) { for (const k of Object.keys(ctl.botAt)) ctl.botAt[k] = Math.min(ctl.botAt[k], Date.now() + 200); }
+        for (const k of Object.keys(ctl.botAt)) ctl.botAt[k] = Math.min(ctl.botAt[k], Date.now() + 150);
         if (n === 6 && !window.__shot) { window.__shot = 1; }
       }
       return "TROP LONG";
