@@ -48,8 +48,8 @@ Les gemmes et l'XP ne se modifient que par des fonctions serveur (achat, coffre 
 
 ## Mise en ligne
 
-Le workflow `.github/workflows/pages.yml` publie le site sur GitHub Pages à chaque fusion dans `main`.
-Il faut activer Pages (Settings > Pages > Source : GitHub Actions). Le dépôt étant privé, Pages demande un compte GitHub payant ou de passer le dépôt en public.
+GitHub Pages publie directement la branche `main` (Settings > Pages > Deploy from a branch, dossier racine).
+Adresse : https://corentin-bocquet.github.io/JEUX/
 
 ## Illustrations
 
