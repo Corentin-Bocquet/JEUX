@@ -1,0 +1,14 @@
+{
+  "name": "jeux",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "serve": "http-server -p 8765 -s -c-1 .",
+    "e2e": "node tests/e2e/allgames.cjs test-results && node tests/e2e/multi.cjs test-results"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "playwright": "1.56.1"
+  }
+}
