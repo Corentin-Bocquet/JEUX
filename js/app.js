@@ -5,6 +5,10 @@ import { levelOf, equipOf } from "./catalog.js";
 
 const params = new URLSearchParams(location.search);
 const MOCK = params.has("mock");
+// lien reçu par mail : on le lit avant que Supabase ne nettoie l'adresse
+const AUTH_HASH = new URLSearchParams(location.hash.replace(/^#\/?/, ""));
+const RECOVERY = AUTH_HASH.get("type") === "recovery" || params.get("type") === "recovery";
+const AUTH_ERROR = AUTH_HASH.get("error_code") || AUTH_HASH.get("error") || params.get("error_code");
 
 // ------------------------------------------------ thème
 export const theme = {
@@ -119,10 +123,18 @@ async function boot() {
   A.api = mod.createApi();
   let user = null;
   try { user = await A.api.init(); } catch (e) { console.error(e); }
-  A.api.onAuth((ev, u) => {
-    if (ev === "SIGNED_OUT") location.reload();
-    if (ev === "PASSWORD_RECOVERY") import("./screens/auth.js").then((m) => m.newPassword(A));
-  });
+  A.api.onAuth((ev) => { if (ev === "SIGNED_OUT") location.reload(); });
+  // on retire les jetons de connexion de l'adresse (sinon le routeur les prendrait pour une page)
+  if (RECOVERY || AUTH_ERROR || /access_token=/.test(location.hash)) history.replaceState(null, "", location.pathname + location.search.replace(/[?&](type|error_code|error|error_description)=[^&]*/g, "") + "#/");
+  if (AUTH_ERROR && !user) {
+    await showAuth();
+    toast(/expired/.test(AUTH_ERROR) ? "Ce lien a expiré. Redemande un mail « mot de passe oublié »." : "Ce lien n'est plus valable. Redemande un mail.", "err");
+    return;
+  }
+  if (RECOVERY && user) {
+    const m = await import("./screens/auth.js");
+    return m.newPassword(A, document.getElementById("root"));
+  }
   if (!user) return showAuth();
   await enter();
 }
@@ -133,9 +145,9 @@ export async function enter() {
   if (!shell) buildShell();
   renderTop();
   window.addEventListener("hashchange", navigate);
-  // code de salon passé dans le lien d'invitation
-  const code = params.get("code");
-  if (code) { history.replaceState(null, "", location.pathname + (MOCK ? "?mock=1" : "") + "#/salon/" + code.toUpperCase()); }
+  // code de salon passé dans le lien d'invitation (?salon=ABCDE)
+  const code = params.get("salon");
+  if (code && /^[A-Za-z0-9]{5}$/.test(code)) { history.replaceState(null, "", location.pathname + (MOCK ? "?mock=1" : "") + "#/salon/" + code.toUpperCase()); }
   navigate();
   live();
 }

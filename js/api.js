@@ -24,7 +24,7 @@ export function frError(e) {
 const must = ({ data, error }) => { if (error) throw new Error(frError(error)); return data; };
 
 export function createApi() {
-  const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "implicit" } });
   let user = null;
   let onlineCh = null;
 

@@ -55,6 +55,20 @@ export async function render(A, main, { route, args }) {
     A.go("/");
   };
   const help = () => sheet(h("ol", { class: "rules" }, game.meta.rules.map((x) => h("li", null, x))), { title: game.meta.name });
+  // règles obligatoires la toute première fois qu'on joue à ce jeu
+  const seenKey = "jeux.regles." + me;
+  const seen = () => { try { return JSON.parse(localStorage.getItem(seenKey) || "[]"); } catch { return []; } };
+  const firstTime = () => !((A.profile.stats || {})[room.game] || {}).p && !seen().includes(room.game);
+  const showRules = () => new Promise((done) => {
+    const ok = h("button", { class: "btn green block" }, "J'ai compris, on joue !");
+    const s = sheet(h("div", { class: "stack" },
+      h("p", { class: "lead small" }, "Première partie : voici les règles. Tu pourras les revoir à tout moment avec le bouton i."),
+      h("ol", { class: "rules" }, game.meta.rules.map((x) => h("li", null, x))), ok), { title: "Règles : " + game.meta.name, onClose: () => done() });
+    ok.onclick = () => {
+      try { localStorage.setItem(seenKey, JSON.stringify([...seen(), room.game])); } catch {}
+      s.close();
+    };
+  });
 
   function drawBar(r) {
     const done = r.status === "done" && r.state && r.state.result;
@@ -86,7 +100,7 @@ export async function render(A, main, { route, args }) {
     timer.style.visibility = "hidden";
     strip.replaceChildren();
     const host = r.host === me;
-    const link = `${location.origin}${location.pathname}?code=${r.code}`;
+    const link = `${location.origin}${location.pathname}?salon=${r.code}`;
     const seats = h("div", { class: "seats" });
     for (const p of r.players) {
       seats.append(h("div", { class: "seat glass" },
@@ -227,7 +241,7 @@ export async function render(A, main, { route, args }) {
   // accès pour les tests automatiques (serveur simulé uniquement)
   if (A.api.kind === "mock") window.__room = { ctl, game, me };
   draw(room);
-  if (solo) ctl.begin();
+  (firstTime() ? showRules() : Promise.resolve()).then(() => { if (solo && !gone) ctl.begin(); });
   return () => {
     gone = true;
     clearInterval(tt);

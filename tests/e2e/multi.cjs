@@ -5,6 +5,7 @@ require("fs").mkdirSync(OUT, { recursive: true });
   const b = await chromium.launch();
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, colorScheme: "dark" });
   const errs = [];
+  const okRules = async (P) => { await P.waitForSelector("text=J'ai compris, on joue !"); await P.click("text=J'ai compris, on joue !"); await P.waitForSelector(".sheet-wrap", { state: "detached" }).catch(() => {}); };
   const mk = async (name) => {
     const p = await ctx.newPage();
     p.on("pageerror", (e) => errs.push(name + " PAGEERR " + e.message));
@@ -33,6 +34,7 @@ require("fs").mkdirSync(OUT, { recursive: true });
   await A.click('.gcard[aria-label="Puissance 4"]');
   await A.click("text=Créer un salon");
   await A.waitForSelector(".code-big");
+  await okRules(A);
   const code = await A.textContent(".code-big");
   await A.click(".lobby button:has-text('Inviter'):not(:has-text('Inviter un'))".replace(":not(:has-text('Inviter un'))", "") ).catch(() => {});
   // bouton Inviter de la ligne d'ami (pas le bouton de partage)
@@ -42,6 +44,7 @@ require("fs").mkdirSync(OUT, { recursive: true });
   await B.screenshot({ path: OUT + "/m-invite.png" });
   await B.click(".item button:has-text('Jouer')");
   await B.waitForSelector(".code-big");
+  await okRules(B);
   await A.waitForFunction(() => document.querySelectorAll(".seat:not(.emptyseat)").length === 2);
   await A.screenshot({ path: OUT + "/m-lobby.png" });
   console.log("salon", code, ": 2 joueurs");
@@ -85,6 +88,7 @@ require("fs").mkdirSync(OUT, { recursive: true });
   await A.waitForSelector(".code-big");
   await B.evaluate((c) => (location.hash = "/salon/" + c), room);
   await A.waitForFunction(() => document.querySelectorAll(".seat:not(.emptyseat)").length === 2);
+  for (const P of [A, B]) await okRules(P);
   await A.click("text=Lancer la partie");
   await Promise.all([A.waitForSelector(".sd-grid"), B.waitForSelector(".sd-grid")]);
   const racer = (P) => P.evaluate(async () => {
