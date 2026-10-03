@@ -158,10 +158,12 @@ function live() {
   const loadFriends = async () => { try { A.friends = await api.friends(); A.refreshTabs(); window.dispatchEvent(new Event("jeux:friends")); } catch {} };
   const loadInv = async (p) => {
     try {
-      const before = new Set(A.invites.map((i) => i.id));
+      const before = new Set(A.invites.map((i) => i.id + ":" + i.at));
       A.invites = await api.invites();
-      const nw = A.invites.find((i) => !before.has(i.id));
-      if (nw && p) { sfx.turn(); toast(`${nw.from ? nw.from.display_name : "Un ami"} t'invite à jouer !`, "ok"); }
+      // nouvelle invitation (ou au démarrage, une invitation de moins de 3 minutes) : bandeau Rejoindre / Décliner
+      const nw = A.invites.find((i) => !before.has(i.id + ":" + i.at) && (p || !i.at || Date.now() - i.at < 18e4));
+      const inRoom = A.route === "salon" && nw && location.hash.toUpperCase().endsWith("/" + String(nw.code).toUpperCase());
+      if (nw && !inRoom) import("./screens/invite.js").then((m) => m.inviteBanner(A, nw));
       window.dispatchEvent(new Event("jeux:invites"));
     } catch {}
   };
@@ -169,7 +171,7 @@ function live() {
   api.onFriends(loadFriends);
   api.onInvites((p) => loadInv(p || true));
   api.onOnline((set) => { A.online = set; window.dispatchEvent(new Event("jeux:online")); });
-  setInterval(loadInv, 30000);
+  setInterval(loadInv, 15000);
 }
 
 async function showAuth() {

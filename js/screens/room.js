@@ -5,6 +5,7 @@ import { gameInfo, loadGame, loadView } from "../games/index.js";
 import { RoomCtl, localStore, makeBot } from "../rooms.js";
 import { equipOf } from "../catalog.js";
 import { gameOptions, picker, carousel, summary, restore, modeOf } from "./settings.js";
+import { pickPlayers, sendInvites, resetTogether } from "./invite.js";
 
 export async function render(A, main, { route, args }) {
   const solo = route === "solo";
@@ -97,9 +98,61 @@ export async function render(A, main, { route, args }) {
   }
 
   // ---------------- salle d'attente
+  // invitations que j'ai envoyées pour ce salon (en attente / refusées), relues régulièrement
+  let sent = [], sentKey = "", sentTimer = null, autoTimer = null, autoAt = 0;
+  const pollSent = async () => {
+    const r = ctl.room;
+    if (!r || r.status !== "lobby" || gone) return;
+    try {
+      const list = (await A.api.sentInvites(r.id)).filter((i) => !r.players.some((p) => p.id === i.to));
+      const key = JSON.stringify(list.map((i) => [i.to, i.status]));
+      if (key !== sentKey) { sent = list; sentKey = key; if (ctl.room && ctl.room.status === "lobby") drawLobby(ctl.room); }
+    } catch {}
+  };
+  const startPoll = () => { if (!sentTimer) { pollSent(); sentTimer = setInterval(pollSent, 2500); } };
+  const stopPoll = () => { clearInterval(sentTimer); sentTimer = null; clearTimeout(autoTimer); autoTimer = null; autoAt = 0; };
+
+  async function invitePlayers() {
+    const r = ctl.room;
+    const host = r.host === me;
+    const pending = sent.filter((i) => i.status === "pending").length;
+    const pick = await pickPlayers(A, { free: r.max_players - r.players.length - pending, allowBots: host, exclude: [...r.players.map((p) => p.id), ...sent.filter((i) => i.status === "pending").map((i) => i.to)] });
+    if (!pick) return;
+    try {
+      if (pick.bots) await ctl.patch((x) => {
+        const add = [];
+        for (let i = 0; i < pick.bots && x.players.length + add.length < x.max_players; i++) add.push(makeBot([...x.players, ...add].map((p) => p.name)));
+        return add.length ? { players: [...x.players, ...add] } : null;
+      });
+      const n = await sendInvites(A, r.id, pick);
+      if (n) { toast(n > 1 ? `${n} invitations envoyées !` : "Invitation envoyée !", "ok"); sfx.ok(); }
+      // l'hôte qui invite depuis le salon active le lancement automatique
+      if (n && host && !(ctl.room.settings || {}).auto) await ctl.patch((x) => ({ settings: { ...(x.settings || {}), auto: true } })).catch(() => {});
+      resetTogether();
+      sentKey = ""; pollSent();
+    } catch (e) { toast(e.message, "err"); }
+  }
+
+  // lancement automatique : tous les invités ont répondu et au moins un ami est là
+  function autoStart(r) {
+    const host = r.host === me;
+    sent = sent.filter((i) => !r.players.some((p) => p.id === i.to));
+    const pending = sent.filter((i) => i.status === "pending").length;
+    const humans = r.players.filter((p) => !p.bot && !p.left).length;
+    const ready = host && (r.settings || {}).auto && !pending && humans >= 2 && r.players.length >= info.min;
+    if (!ready) { clearTimeout(autoTimer); autoTimer = null; autoAt = 0; return null; }
+    if (!autoTimer) {
+      autoAt = Date.now() + 3000;
+      autoTimer = setTimeout(() => { autoTimer = null; if (!gone && ctl.room && ctl.room.status === "lobby") { sfx.ok(); ctl.begin(); } }, 3000);
+    }
+    return h("div", { class: "autostart" }, "🚀 Tout le monde est là ! La partie démarre…");
+  }
+
   function drawLobby(r) {
     timer.style.visibility = "hidden";
     strip.replaceChildren();
+    startPoll();
+    sent = sent.filter((i) => !r.players.some((p) => p.id === i.to));
     const host = r.host === me;
     const link = `${location.origin}${location.pathname}?salon=${r.code}`;
     const seats = h("div", { class: "seats" });
@@ -110,28 +163,34 @@ export async function render(A, main, { route, args }) {
         h("div", { html: avatarHTML(p, 58), style: { borderRadius: "50%", overflow: "hidden", width: "58px", height: "58px" } }),
         h("div", { class: "nm" }, p.name), p.bot ? h("span", { class: "badge" }, "Robot") : null));
     }
-    for (let i = r.players.length; i < r.max_players; i++) {
-      seats.append(h("button", { class: "seat emptyseat", disabled: !host, onclick: () => host && addBot() }, icon("plus", 26), h("span", { class: "small" }, host ? "Ajouter un robot" : "Place libre")));
+    const pending = sent.filter((i) => i.status === "pending");
+    const declined = sent.filter((i) => i.status === "declined");
+    for (const i of [...pending, ...declined]) {
+      seats.append(h("div", { class: "seat glass " + (i.status === "pending" ? "waiting" : "declined") },
+        h("div", { html: avatarHTML({ photo: i.profile.avatar_url, avatar: i.profile.equipped }, 58), style: { borderRadius: "50%", overflow: "hidden", width: "58px", height: "58px" } }),
+        h("div", { class: "nm" }, i.profile.display_name),
+        h("span", { class: "state" }, i.status === "pending" ? "Invité, en attente" : "A décliné")));
     }
-    const friends = A.friends.filter((f) => f.status === "accepted" && !r.players.some((p) => p.id === f.id))
-      .sort((a, b) => (A.online.has(b.id) ? 1 : 0) - (A.online.has(a.id) ? 1 : 0));
+    for (let i = r.players.length + pending.length; i < r.max_players; i++) {
+      seats.append(h("button", { class: "seat emptyseat", onclick: () => { sfx.tap(); invitePlayers(); } }, icon("plus", 26), h("span", { class: "small" }, host ? "Ajouter un joueur" : "Inviter un ami")));
+    }
     const canStart = r.players.length >= info.min;
+    const auto = autoStart(r);
+    const allDeclined = host && sent.length && !pending.length && r.players.filter((p) => !p.bot).length < 2;
     stage.replaceChildren(h("div", { class: "lobby wrap-w" },
       h("div", { class: "code-card glass" },
         h("div", { class: "small dim" }, "Code du salon"),
         h("div", { class: "code-big" }, r.code),
         h("div", { class: "row gap center", style: { marginTop: "10px" } },
           h("button", { class: "btn ghost small", onclick: () => copy(r.code) }, "Copier le code"),
-          h("button", { class: "btn small", onclick: () => share(link) }, icon("partager", 18), "Inviter"))),
+          h("button", { class: "btn small", onclick: () => share(link) }, icon("partager", 18), "Partager le lien"))),
       setCard(r, host),
-      h("div", { class: "section" }, h("div", { class: "h3" }, `Joueurs ${r.players.length}/${r.max_players}`), h("span", { class: "small dim" }, info.min > 1 ? `${info.min} minimum` : "")),
+      h("div", { class: "section" }, h("div", { class: "h3" }, `Joueurs ${r.players.length}/${r.max_players}`), h("span", { class: "small dim" }, pending.length ? `${pending.length} invitation${pending.length > 1 ? "s" : ""} en attente` : info.min > 1 ? `${info.min} minimum` : "")),
       seats,
-      friends.length ? h("div", { class: "section" }, h("div", { class: "h3" }, "Inviter un ami")) : null,
-      friends.length ? h("div", { class: "list" }, friends.map((f) => h("div", { class: "item glass" },
-        h("div", { class: "av", html: avatarHTML({ photo: f.profile.avatar_url, avatar: f.profile.equipped }, 46) }, A.online.has(f.id) ? h("i", { class: "online" }) : null),
-        h("div", { class: "grow" }, h("div", null, f.profile.display_name), h("div", { class: "small dim" }, A.online.has(f.id) ? "En ligne" : "@" + f.profile.username)),
-        h("button", { class: "btn small", onclick: async (e) => { e.target.disabled = true; try { await A.api.invite(r.id, f.id); toast("Invitation envoyée !", "ok"); } catch (err) { toast(err.message, "err"); e.target.disabled = false; } } }, "Inviter")))) : null,
-      host ? h("button", { class: "btn green block", disabled: !canStart, onclick: () => { sfx.ok(); ctl.begin(); } }, canStart ? "Lancer la partie" : `Il faut ${info.min} joueurs`)
+      r.players.length + pending.length < r.max_players ? h("button", { class: "btn purple block", onclick: () => { sfx.tap(); invitePlayers(); } }, icon("amis", 20), "Inviter des amis") : null,
+      allDeclined ? h("div", { class: "card glass center" }, h("div", { class: "h3" }, "Personne n'a pu venir 😢"), h("p", { class: "lead small" }, "Invite d'autres amis, ou joue avec des robots.")) : null,
+      auto,
+      host ? h("button", { class: "btn green block", disabled: !canStart, onclick: () => { sfx.ok(); ctl.begin(); } }, canStart ? (pending.length ? "Lancer sans attendre" : "Lancer la partie") : `Il faut ${info.min} joueurs`)
         : h("div", { class: "card glass center" }, h("div", { class: "h3" }, "En attente de l'hôte…"), h("p", { class: "lead small" }, "La partie démarre dès qu'il lance.")),
       h("div", { style: { height: "20px" } })));
   }
@@ -165,10 +224,6 @@ export async function render(A, main, { route, args }) {
     const text = `Viens jouer à ${info.name} avec moi sur JEUX ! Code : ${ctl.room.code}`;
     try { if (navigator.share) { await navigator.share({ title: "JEUX", text, url: link }); return; } } catch { return; }
     copy(link);
-  }
-  async function addBot() {
-    sfx.tap();
-    await ctl.patch((r) => r.players.length >= r.max_players ? null : { players: [...r.players, makeBot(r.players.map((p) => p.name))] }).catch((e) => toast(e.message, "err"));
   }
   async function kick(id) {
     await ctl.patch((r) => ({ players: r.players.filter((p) => p.id !== id) })).catch((e) => toast(e.message, "err"));
@@ -263,6 +318,7 @@ export async function render(A, main, { route, args }) {
     drawBar(r);
     const ph = r.status;
     if (ph !== phase && ph === "playing" && resultSheet) { resultSheet.s.close(); }
+    if (ph !== "lobby") stopPoll();
     if (ph === "lobby") { if (mounted) { mounted.destroy && mounted.destroy(); mounted = null; } drawLobby(r); }
     else if (ph === "playing") drawGame(r);
     else if (ph === "done") drawResult(r);
@@ -275,6 +331,7 @@ export async function render(A, main, { route, args }) {
   (firstTime() ? showRules() : Promise.resolve()).then(() => { if (solo && !gone) ctl.begin(); });
   return () => {
     gone = true;
+    stopPoll();
     clearInterval(tt);
     if (resultSheet) resultSheet.s.close();
     if (mounted && mounted.destroy) mounted.destroy();

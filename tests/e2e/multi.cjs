@@ -35,26 +35,29 @@ require("fs").mkdirSync(OUT, { recursive: true });
   await A.click("text=Entre amis");
   await A.click('.modecard:has-text("Match en 3")');
   await A.click('.modecard:has-text("Classique")');
-  await A.click("text=Créer un salon");
+  await A.click("text=Choisir mes amis");
+  await A.waitForSelector('.fcard[aria-label="bob"]');
+  await A.waitForTimeout(700);
+  await A.screenshot({ path: OUT + "/m-pick.png" });
+  await A.click('.fcard[aria-label="bob"]');
+  await A.click("text=Inviter 1 joueur");
   await A.waitForSelector(".code-big");
   await okRules(A);
+  await A.waitForSelector(".seat.waiting");
   await A.waitForSelector(".lobby-set");
   if (!(await A.textContent(".lobby .card h3, .lobby .card .h3")).includes("Classique")) errs.push("mode non affiché dans le salon");
   const code = await A.textContent(".code-big");
-  await A.click(".lobby button:has-text('Inviter'):not(:has-text('Inviter un'))".replace(":not(:has-text('Inviter un'))", "") ).catch(() => {});
-  // bouton Inviter de la ligne d'ami (pas le bouton de partage)
-  const btns = await A.$$(".lobby .item button");
-  await btns[0].click();
-  await B.waitForSelector("text=Invitations", { timeout: 8000 });
-  await B.screenshot({ path: OUT + "/m-invite.png" });
-  await B.click(".item button:has-text('Jouer')");
+  // bob reçoit le bandeau et rejoint
+  await B.waitForSelector(".ibanner.in", { timeout: 20000 });
+  await B.screenshot({ path: OUT + "/m-banner.png" });
+  await B.click(".ibanner >> text=Rejoindre");
   await B.waitForSelector(".code-big");
   await okRules(B);
-  await A.waitForFunction(() => document.querySelectorAll(".seat:not(.emptyseat)").length === 2);
   await A.screenshot({ path: OUT + "/m-lobby.png" });
-  console.log("salon", code, ": 2 joueurs");
-  await A.click("text=Lancer la partie");
-  await Promise.all([A.waitForSelector(".p4-board"), B.waitForSelector(".p4-board")]);
+  console.log("salon", code, ": bob a rejoint depuis le bandeau");
+  // démarrage automatique, sans cliquer sur Lancer
+  await Promise.all([A.waitForSelector(".p4-board", { timeout: 20000 }), B.waitForSelector(".p4-board", { timeout: 20000 })]);
+  console.log("démarrage automatique : ok");
   // on joue en cliquant les colonnes
   const play = async (P) => P.evaluate(async () => {
     const { ctl, game, me } = window.__room;
@@ -91,11 +94,26 @@ require("fs").mkdirSync(OUT, { recursive: true });
     location.hash = "/salon/" + r.code; return r.code;
   });
   await A.waitForSelector(".code-big");
-  await B.evaluate((c) => (location.hash = "/salon/" + c), room);
-  await A.waitForFunction(() => document.querySelectorAll(".seat:not(.emptyseat)").length === 2);
-  for (const P of [A, B]) await okRules(P);
-  await A.click("text=Lancer la partie");
-  await Promise.all([A.waitForSelector(".sd-grid"), B.waitForSelector(".sd-grid")]);
+  await okRules(A);
+  const inviteBob = async () => {
+    await A.click(".seat.emptyseat");
+    await A.waitForSelector('.fcard[aria-label="bob"]');
+    await A.click('.fcard[aria-label="bob"]');
+    await A.click("text=Inviter 1 joueur");
+  };
+  await inviteBob();
+  await B.waitForSelector(".ibanner.in", { timeout: 20000 });
+  await B.click(".ibanner >> text=Décliner");
+  await A.waitForSelector(".seat.declined", { timeout: 10000 });
+  console.log("invitation déclinée : ok");
+  await B.waitForTimeout(500);
+  await inviteBob();
+  await B.waitForSelector(".ibanner.in", { timeout: 20000 });
+  await B.click(".ibanner >> text=Rejoindre");
+  await B.waitForSelector(".code-big");
+  await okRules(B);
+  await Promise.all([A.waitForSelector(".sd-grid", { timeout: 20000 }), B.waitForSelector(".sd-grid", { timeout: 20000 })]);
+  console.log("sudoku : démarrage automatique après la 2e invitation");
   const racer = (P) => P.evaluate(async () => {
     const { ctl, game, me } = window.__room;
     const { rng, newSeed } = await import("/js/engine.js");

@@ -49,7 +49,7 @@ export function render(A, main) {
           if (!(await confirmBox(`Retirer ${f.profile.display_name} de tes amis ?`, { ok: "Retirer", danger: true }))) return;
           await A.api.friendRemove(f.id); A.friends = await A.api.friends(); draw();
         } }, icon("croix", 18)))))
-        : h("div", { class: "empty card glass" }, h("div", { class: "h3" }, "Pas encore d'amis"), h("p", { class: "lead small" }, "Ajoute-les avec leur pseudo, puis invite-les depuis un salon.")),
+        : h("div", { class: "empty card glass" }, h("div", { class: "h3" }, "Pas encore d'amis"), h("p", { class: "lead small" }, "Ajoute-les avec leur pseudo. Ensuite, dans un jeu, onglet « Entre amis », tu les invites en un geste.")),
       out.length ? h("div", { class: "section" }, h("div", { class: "h3" }, "Demandes envoyées")) : null,
       out.length ? h("div", { class: "list" }, out.map((f) => person(f, h("span", { class: "small dim" }, "En attente"),
         h("button", { class: "iconbtn", "aria-label": "Annuler", onclick: async () => { await A.api.friendRemove(f.id); A.friends = await A.api.friends(); draw(); } }, icon("croix", 18))))) : null);

@@ -3,6 +3,8 @@ import { h, tile, icon, gem, toast, sfx, sheet, confetti, fmt, buzz } from "../u
 import { mascotSVG } from "../avatar.js";
 import { GAMES, CATS, gameInfo } from "../games/index.js";
 import { gameOptions, restore, picker, carousel, modeOf } from "./settings.js";
+import { pickPlayers, sendInvites } from "./invite.js";
+import { makeBot } from "../rooms.js";
 import { REWARDS } from "../catalog.js";
 
 let cat = "Tous";
@@ -40,7 +42,7 @@ export function render(A, main) {
         const g = gameInfo(inv.game) || { name: "Jeu", icon: "jouer", color: "#6C5CE7" };
         return h("div", { class: "item glass" }, tile(g.icon, 46, g.color),
           h("div", { class: "grow" }, h("div", null, g.name), h("div", { class: "small dim" }, `${inv.from ? inv.from.display_name : "Un ami"} t'invite`)),
-          h("button", { class: "iconbtn", "aria-label": "Refuser", onclick: async () => { await A.api.deleteInvite(inv.id); A.invites = A.invites.filter((i) => i.id !== inv.id); drawInv(); } }, icon("croix", 18)),
+          h("button", { class: "iconbtn", "aria-label": "Refuser", onclick: async () => { await A.api.declineInvite(inv.id); A.invites = A.invites.filter((i) => i.id !== inv.id); drawInv(); } }, icon("croix", 18)),
           h("button", { class: "btn green small", onclick: () => A.go("/salon/" + inv.code) }, "Jouer"));
       })));
   };
@@ -78,7 +80,8 @@ export function render(A, main) {
       h("div", { class: "shelf" }, top.map((g) => miniCard(A, g)))] : []));
   };
   const drawGrid = () => {
-    chips.replaceChildren(...CATS.map((c) => h("button", { class: "chip" + (c === cat ? " on" : ""), role: "tab", "aria-selected": c === cat ? "true" : "false", onclick: () => { cat = c; sfx.tap(); drawGrid(); } }, c)));
+    chips.replaceChildren(...CATS.map((c) => h("button", { class: "chip" + (c === cat ? " on" : "") + (CAT_IMG[c] ? " img" : ""), role: "tab", "aria-selected": c === cat ? "true" : "false", onclick: () => { cat = c; sfx.tap(); drawGrid(); } },
+      CAT_IMG[c] ? h("img", { src: `assets/cats/${CAT_IMG[c]}.webp`, alt: "", width: 22, height: 22 }) : null, c)));
     sortSel.replaceChildren(...SORTS.map(([k, t]) => h("button", { class: "chip small" + (k === sort ? " on" : ""), onclick: () => { sort = k; sfx.tap(); drawGrid(); } }, t)));
     const q = norm(query.trim());
     const list = sorted(A, GAMES.filter((g) => (cat === "Tous" || g.cat === cat) && (!q || norm(g.name + " " + (g.full || "") + " " + g.cat).includes(q))));
@@ -99,6 +102,8 @@ export function render(A, main) {
   return () => { window.removeEventListener("jeux:invites", onInv); window.removeEventListener("jeux:favoris", onFav); };
 }
 
+// vignettes des catégories (assets/cats)
+const CAT_IMG = { Cartes: "cartes", Mots: "mots", Plateau: "plateau", "Dés": "casino", Adresse: "adresse", "Réflexion": "quiz", Quiz: "quiz", "Soirée": "soiree", Arcade: "arcade", Casino: "casino" };
 const SORTS = [["top", "Plus joués"], ["fav", "Favoris d'abord"], ["az", "A à Z"], ["win", "Mes meilleurs"]];
 let sort = "top", query = "";
 const norm = (t) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -243,8 +248,9 @@ export async function openGame(A, id) {
       h("button", { class: "btn green block big", onclick: () => { save("solo"); s.close(); startSolo(A, id, conf, modes, options); } }, icon("robot", 22), "Jouer en solo"));
     else tabBox.replaceChildren(
       carousel(turnItems, () => conf.turnTime, (v) => (conf.turnTime = v), { label: "Temps par tour", icon: "⏱️" }),
-      h("p", { class: "small dim" }, `Jusqu'à ${g.max} joueurs. Tu pourras ajouter des robots dans le salon.`),
-      h("button", { class: "btn block big", onclick: () => { save("amis"); s.close(); createRoom(A, id, conf, modes, options); } }, icon("salon", 22), "Créer un salon"));
+      h("button", { class: "btn green block big", onclick: () => { save("amis"); s.close(); playWithFriends(A, id, conf, modes, options); } }, icon("amis", 22), "Choisir mes amis"),
+      h("p", { class: "small dim center" }, `Jusqu'à ${g.max} joueurs. Tes amis reçoivent une invitation, la partie démarre dès qu'ils ont répondu.`),
+      h("button", { class: "btn ghost block", onclick: () => { save("amis"); s.close(); createRoom(A, id, conf, modes, options); } }, icon("salon", 20), "Créer un salon avec un code"));
   };
   drawTab();
   // mémorise les derniers réglages de ce jeu (synchronisés sur le compte)
@@ -281,12 +287,35 @@ export function startSolo(A, id, conf, modes = [], options = []) {
   A.go("/solo/" + id);
 }
 
-export async function createRoom(A, id, conf, modes = [], options = []) {
+export async function createRoom(A, id, conf, modes = [], options = [], { auto = false, go = true } = {}) {
   const g = gameInfo(id);
   const settings = { ...pickSettings(options, conf), mode: modeOf(modes, options, conf), level: conf.level || 2 };
   if (conf.turnTime != null) settings.turnTime = conf.turnTime;
+  if (auto) settings.auto = true;
   try {
     const room = await A.api.rooms.create(id, g.max, settings, A.me());
-    A.go("/salon/" + room.code);
+    if (go) A.go("/salon/" + room.code);
+    return room;
+  } catch (e) { toast(e.message, "err"); return null; }
+}
+
+// partie entre amis en un geste : on choisit les amis (et des robots), le salon se crée, les invitations partent
+export async function playWithFriends(A, id, conf, modes = [], options = []) {
+  const g = gameInfo(id);
+  const pick = await pickPlayers(A, { free: g.max - 1, allowBots: true, title: `${g.name} : avec qui ?`, ok: "Inviter" });
+  if (!pick) return;
+  const humans = pick.ids.length + pick.users.length;
+  let room = await createRoom(A, id, conf, modes, options, { auto: humans > 0, go: false });
+  if (!room) return;
+  try {
+    if (pick.bots) {
+      const players = room.players.slice();
+      for (let i = 0; i < pick.bots && players.length < room.max_players; i++) players.push(makeBot(players.map((p) => p.name)));
+      const res = await A.api.rooms.update(room.id, room.version, { players });
+      if (res && res.room) room = res.room;
+    }
+    const n = await sendInvites(A, room.id, pick);
+    if (n) toast(n > 1 ? `${n} invitations envoyées !` : "Invitation envoyée !", "ok");
   } catch (e) { toast(e.message, "err"); }
+  A.go("/salon/" + room.code);
 }

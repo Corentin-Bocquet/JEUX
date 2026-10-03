@@ -154,6 +154,7 @@ export function createApi() {
         return { ...p, value: period === "week" ? rs.reduce((t, r) => t + r.xp, 0) : p.xp, wins: period === "week" ? rs.filter((r) => r.outcome === "win").length : p.wins };
       }).sort((a, b) => b.value - a.value || b.wins - a.wins);
     },
+    async findUser(username) { const db = read(); return Object.values(db.profiles).find((p) => p.username === String(username).toLowerCase().trim()) || null; },
     async profilesByIds(ids) { const db = read(); return ids.map((i) => db.profiles[i]).filter(Boolean); },
 
     async friends() {
@@ -194,7 +195,54 @@ export function createApi() {
 
     async invites() {
       const id = me(); const db = read();
-      return db.invites.filter((i) => i.to === id).map((i) => ({ id: i.id, room_id: i.room_id, code: i.code, game: i.game, from: db.profiles[i.from] }));
+      return db.invites.filter((i) => i.to === id && (i.status || "pending") === "pending" && (!i.at || Date.now() - i.at < 30 * 6e4))
+        .map((i) => ({ id: i.id, room_id: i.room_id, code: i.code, game: i.game, at: i.at, from: db.profiles[i.from] }));
+    },
+    async inviteMany(roomId, ids) {
+      const id = me();
+      const n = await tx((db) => {
+        const r = db.rooms[roomId];
+        if (!r || !isMember(r, id)) err("pas dans ce salon");
+        if (r.status !== "lobby") err("La partie a déjà commencé.");
+        let k = 0;
+        for (const to of ids) {
+          if (!db.friends.some((f) => f.status === "accepted" && ((f.a === id && f.b === to) || (f.b === id && f.a === to)))) err("Vous n'êtes pas encore amis.");
+          if (to === id || isMember(r, to)) continue;
+          db.invites = db.invites.filter((i) => !(i.room_id === roomId && i.to === to));
+          db.invites.push({ id: db.seq++, room_id: roomId, from: id, to, code: r.code, game: r.game, status: "pending", at: Date.now() });
+          k++;
+        }
+        return k;
+      });
+      emit({ t: "invites" });
+      return delay(n);
+    },
+    async inviteUsername(roomId, username) {
+      const id = me();
+      const o = await tx((db) => {
+        const r = db.rooms[roomId];
+        if (!r || !isMember(r, id)) err("pas dans ce salon");
+        if (r.status !== "lobby") err("La partie a déjà commencé.");
+        const p = Object.values(db.profiles).find((x) => x.username === String(username).toLowerCase().trim());
+        if (!p) err("Aucun joueur avec ce pseudo.");
+        if (p.id === id) err("C'est ton propre pseudo !");
+        if (isMember(r, p.id)) err("Ce joueur est déjà dans le salon.");
+        db.invites = db.invites.filter((i) => !(i.room_id === roomId && i.to === p.id));
+        db.invites.push({ id: db.seq++, room_id: roomId, from: id, to: p.id, code: r.code, game: r.game, status: "pending", at: Date.now() });
+        return p;
+      });
+      emit({ t: "invites" });
+      return delay(o);
+    },
+    async declineInvite(iid) {
+      const id = me();
+      await tx((db) => { const i = db.invites.find((x) => x.id === iid && x.to === id); if (i) i.status = "declined"; });
+      emit({ t: "invites" });
+    },
+    async sentInvites(roomId) {
+      const id = me(); const db = read();
+      return db.invites.filter((i) => i.room_id === roomId && i.from === id && db.profiles[i.to])
+        .map((i) => ({ id: i.id, to: i.to, status: i.status || "pending", profile: db.profiles[i.to] }));
     },
     async invite(roomId, to) {
       const id = me();
@@ -203,7 +251,7 @@ export function createApi() {
         if (!r || !isMember(r, id)) err("pas dans ce salon");
         if (!db.friends.some((f) => f.status === "accepted" && ((f.a === id && f.b === to) || (f.b === id && f.a === to)))) err("Vous n'êtes pas encore amis.");
         db.invites = db.invites.filter((i) => !(i.room_id === roomId && i.to === to));
-        db.invites.push({ id: db.seq++, room_id: roomId, from: id, to, code: r.code, game: r.game });
+        db.invites.push({ id: db.seq++, room_id: roomId, from: id, to, code: r.code, game: r.game, status: "pending", at: Date.now() });
       });
       emit({ t: "invites" });
     },

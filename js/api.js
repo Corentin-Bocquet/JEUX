@@ -15,6 +15,7 @@ const FR = [
   [/salon introuvable/, "Salon introuvable. Vérifie le code."], [/partie deja commencee/, "La partie a déjà commencé."],
   [/salon complet/, "Ce salon est complet."], [/joueur introuvable/, "Aucun joueur avec ce pseudo."],
   [/c est toi/, "C'est ton propre pseudo !"], [/pas amis/, "Vous n'êtes pas encore amis."],
+  [/deja dans le salon/, "Ce joueur est déjà dans le salon."], [/trop d invitations/, "Trop d'invitations d'un coup, attends un peu."],
 ];
 export function frError(e) {
   const msg = (e && (e.message || e.error_description || e.msg)) || String(e || "Erreur");
@@ -90,6 +91,10 @@ export function createApi() {
     async leaderboard(scope, period, game = null) {
       return must(await sb.rpc("jeux_leaderboard", { p_scope: scope, p_period: period, p_game: game })) || [];
     },
+    async findUser(username) {
+      const { data } = await sb.from("jeux_profiles").select("id,username,display_name,avatar_url,equipped").eq("username", String(username).toLowerCase().trim()).maybeSingle();
+      return data || null;
+    },
     async profilesByIds(ids) {
       if (!ids.length) return [];
       return must(await sb.from("jeux_profiles").select("id,username,display_name,avatar_url,equipped,xp,wins,games").in("id", ids));
@@ -118,10 +123,20 @@ export function createApi() {
 
     // ---------- invitations
     async invites() {
-      const rows = must(await sb.from("jeux_invites").select("id,room_id,from_user,code,game,created_at").eq("to_user", user.id).order("created_at", { ascending: false }));
+      const since = new Date(Date.now() - 30 * 6e4).toISOString();
+      const rows = must(await sb.from("jeux_invites").select("id,room_id,from_user,code,game,created_at").eq("to_user", user.id).eq("status", "pending").gt("created_at", since).order("created_at", { ascending: false }));
       if (!rows.length) return [];
       const profs = await api.profilesByIds([...new Set(rows.map((r) => r.from_user))]);
-      return rows.map((r) => ({ id: r.id, room_id: r.room_id, code: r.code, game: r.game, from: profs.find((p) => p.id === r.from_user) }));
+      return rows.map((r) => ({ id: r.id, room_id: r.room_id, code: r.code, game: r.game, at: Date.parse(r.created_at), from: profs.find((p) => p.id === r.from_user) }));
+    },
+    async inviteMany(roomId, ids) { return must(await sb.rpc("jeux_invite_many", { p_room: roomId, p_to: ids })); },
+    async inviteUsername(roomId, username) { return must(await sb.rpc("jeux_invite_username", { p_room: roomId, p_username: username })); },
+    async declineInvite(id) { must(await sb.rpc("jeux_invite_decline", { p_id: id })); },
+    // invitations envoyées pour un salon (vu par l'hôte) : en attente ou refusées
+    async sentInvites(roomId) {
+      const rows = must(await sb.from("jeux_invites").select("id,to_user,status").eq("room_id", roomId).eq("from_user", user.id));
+      const profs = await api.profilesByIds(rows.map((r) => r.to_user));
+      return rows.map((r) => ({ id: r.id, to: r.to_user, status: r.status, profile: profs.find((p) => p.id === r.to_user) })).filter((r) => r.profile);
     },
     async invite(roomId, to) { must(await sb.rpc("jeux_invite", { p_room: roomId, p_to: to })); },
     async deleteInvite(id) { must(await sb.from("jeux_invites").delete().eq("id", id)); },

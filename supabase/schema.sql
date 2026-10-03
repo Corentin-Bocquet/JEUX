@@ -112,6 +112,11 @@ create table if not exists public.jeux_invites (
 );
 alter table public.jeux_invites add column if not exists code text;
 alter table public.jeux_invites add column if not exists game text;
+-- réponse de l'invité : en attente ou refusée (une invitation acceptée disparaît quand il rejoint)
+alter table public.jeux_invites add column if not exists status text not null default 'pending';
+alter table public.jeux_invites drop constraint if exists jeux_invites_status_check;
+alter table public.jeux_invites add constraint jeux_invites_status_check check (status in ('pending','declined'));
+create index if not exists jeux_invites_from on public.jeux_invites (from_user, created_at);
 alter table public.jeux_invites enable row level security;
 alter table public.jeux_invites replica identity full;
 revoke all on public.jeux_invites from anon, authenticated;
@@ -473,8 +478,59 @@ begin
   if not exists (select 1 from jeux_friends where user_a = least(me,p_to) and user_b = greatest(me,p_to) and status = 'accepted') then
     raise exception 'pas amis';
   end if;
-  insert into jeux_invites (room_id, from_user, to_user, code, game) values (p_room, me, p_to, r.code, r.game)
-  on conflict (room_id, to_user) do update set created_at = now(), code = excluded.code, game = excluded.game;
+  perform jeux__invite_one(me, r, p_to);
+end $$;
+
+-- invitations groupées (amis) et par pseudo (n importe quel joueur), avec garde-fou anti-spam
+create or replace function public.jeux__invite_one(me uuid, r public.jeux_rooms, p_to uuid)
+returns boolean language plpgsql security definer set search_path = public as $$
+begin
+  if p_to = me or jeux__is_member(r.players, p_to) then return false; end if;
+  if (select count(*) from jeux_invites where from_user = me and created_at > now() - interval '10 minutes') >= 60 then
+    raise exception 'trop d invitations';
+  end if;
+  insert into jeux_invites (room_id, from_user, to_user, code, game, status) values (r.id, me, p_to, r.code, r.game, 'pending')
+  on conflict (room_id, to_user) do update set created_at = now(), code = excluded.code, game = excluded.game, status = 'pending', from_user = excluded.from_user;
+  return true;
+end $$;
+revoke all on function public.jeux__invite_one(uuid, public.jeux_rooms, uuid) from public, anon, authenticated;
+
+create or replace function public.jeux_invite_many(p_room uuid, p_to uuid[])
+returns integer language plpgsql security definer set search_path = public as $$
+declare me uuid := auth.uid(); r public.jeux_rooms; t uuid; n int := 0;
+begin
+  select * into r from jeux_rooms where id = p_room;
+  if not found or not jeux__is_member(r.players, me) then raise exception 'pas dans ce salon'; end if;
+  if r.status <> 'lobby' then raise exception 'partie deja commencee'; end if;
+  if coalesce(array_length(p_to, 1), 0) > 12 then raise exception 'trop d invitations'; end if;
+  foreach t in array coalesce(p_to, '{}') loop
+    if not exists (select 1 from jeux_friends where user_a = least(me,t) and user_b = greatest(me,t) and status = 'accepted') then
+      raise exception 'pas amis';
+    end if;
+    if jeux__invite_one(me, r, t) then n := n + 1; end if;
+  end loop;
+  return n;
+end $$;
+
+create or replace function public.jeux_invite_username(p_room uuid, p_username text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare me uuid := auth.uid(); r public.jeux_rooms; o public.jeux_profiles;
+begin
+  select * into r from jeux_rooms where id = p_room;
+  if not found or not jeux__is_member(r.players, me) then raise exception 'pas dans ce salon'; end if;
+  if r.status <> 'lobby' then raise exception 'partie deja commencee'; end if;
+  select * into o from jeux_profiles where username = lower(trim(p_username));
+  if not found then raise exception 'joueur introuvable'; end if;
+  if o.id = me then raise exception 'c est toi'; end if;
+  if jeux__is_member(r.players, o.id) then raise exception 'deja dans le salon'; end if;
+  perform jeux__invite_one(me, r, o.id);
+  return jsonb_build_object('id', o.id, 'username', o.username, 'display_name', o.display_name, 'avatar_url', o.avatar_url, 'equipped', o.equipped);
+end $$;
+
+create or replace function public.jeux_invite_decline(p_id bigint)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  update jeux_invites set status = 'declined' where id = p_id and to_user = auth.uid();
 end $$;
 
 -- ---------------- classement
@@ -533,13 +589,15 @@ revoke all on function public.jeux_ensure_profile(text,text), public.jeux_set_us
   public.jeux_room_create(text,int,jsonb,jsonb), public.jeux_room_join(text,jsonb), public.jeux_room_update(uuid,int,jsonb),
   public.jeux_room_leave(uuid), public.jeux_room_claim(uuid), public.jeux_friend_request(text),
   public.jeux_friend_respond(uuid,boolean), public.jeux_friend_remove(uuid), public.jeux_invite(uuid,uuid),
-  public.jeux_leaderboard(text,text,text), public.jeux_my_stats() from public, anon;
+  public.jeux_leaderboard(text,text,text), public.jeux_my_stats(), public.jeux_invite_many(uuid,uuid[]),
+  public.jeux_invite_username(uuid,text), public.jeux_invite_decline(bigint) from public, anon;
 grant execute on function public.jeux_ensure_profile(text,text), public.jeux_set_username(text), public.jeux_buy(text),
   public.jeux_equip(text,text), public.jeux_daily(), public.jeux_solo_reward(text,text,numeric,integer,text),
   public.jeux_room_create(text,int,jsonb,jsonb), public.jeux_room_join(text,jsonb), public.jeux_room_update(uuid,int,jsonb),
   public.jeux_room_leave(uuid), public.jeux_room_claim(uuid), public.jeux_friend_request(text),
   public.jeux_friend_respond(uuid,boolean), public.jeux_friend_remove(uuid), public.jeux_invite(uuid,uuid),
-  public.jeux_leaderboard(text,text,text), public.jeux_my_stats() to authenticated;
+  public.jeux_leaderboard(text,text,text), public.jeux_my_stats(), public.jeux_invite_many(uuid,uuid[]),
+  public.jeux_invite_username(uuid,text), public.jeux_invite_decline(bigint) to authenticated;
 revoke all on function public.jeux__code() from public, anon, authenticated;
 
 -- ============================================================ TEMPS REEL
