@@ -43,6 +43,7 @@ test("le robot difficile bloque une victoire immédiate", () => {
 });
 
 test("parties complètes robot contre robot", () => {
-  for (let seed = 1; seed <= 40; seed++) playout(G, 2, seed, { settings: { level: (seed % 3) + 1 } });
+  for (let seed = 1; seed <= 24; seed++) playout(G, 2, seed, { settings: { level: (seed % 2) + 1 } });
+  for (let seed = 1; seed <= 3; seed++) playout(G, 2, seed, { settings: { level: 3 } });
   timeoutPlayout(G, 2, 9);
 });

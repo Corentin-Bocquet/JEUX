@@ -7,8 +7,8 @@ export const meta = {
   rules: ["Chacun reçoit 2 cartes cachées, puis 5 cartes communes arrivent en 3 temps.",
     "À chaque tour d'enchères : passe, suis, relance ou couche-toi.",
     "La meilleure main de 5 cartes gagne le pot.",
-    "Les blinds montent toutes les 6 mains. Le dernier avec des jetons gagne,",
-    "ou le plus riche quand le nombre de mains prévu est atteint."],
+    "Les blinds montent toutes les 6 mains.",
+    "Le dernier avec des jetons gagne, ou le plus riche quand le nombre de mains prévu est atteint."],
 };
 
 // ------------------------------------------------ évaluation des mains

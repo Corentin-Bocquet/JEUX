@@ -5,7 +5,9 @@ import { GAMES, CATS, gameInfo, SETTINGS, BOT_LEVEL, TURN_TIME } from "../games/
 import { REWARDS } from "../catalog.js";
 
 let cat = "Tous";
-const coverUrl = (id) => `assets/covers/${id}.webp`;
+// illustrations facultatives : ajouter l'identifiant du jeu ici après avoir déposé assets/covers/<id>.webp
+const COVERS = [];
+const coverUrl = (id) => (COVERS.includes(id) ? `assets/covers/${id}.webp` : "");
 
 export function render(A, main) {
   const p = A.profile;
@@ -76,7 +78,7 @@ export function render(A, main) {
 function gameCard(A, g) {
   const st = (A.profile.stats || {})[g.id];
   return h("button", { class: "gcard", style: `--gc:${g.color}`, "aria-label": g.name, onclick: () => { sfx.tap(); openGame(A, g.id); } },
-    h("div", { class: "cover", style: { backgroundImage: `url(${coverUrl(g.id)})` } }),
+    coverUrl(g.id) ? h("div", { class: "cover", style: { backgroundImage: `url(${coverUrl(g.id)})` } }) : null,
     h("div", { class: "shine" }),
     h("div", { class: "art" }, tile(g.icon, 54, g.color)),
     h("div", { class: "nm" }, g.name),
@@ -171,7 +173,7 @@ export async function openGame(A, id) {
   const turnOpt = opt([TURN_TIME[0], TURN_TIME[1], TURN_TIME[2], meta.turnTime ? Math.min(60, meta.turnTime <= 30 ? 20 : meta.turnTime <= 45 ? 40 : 60) : 0]);
 
   const body = h("div", { class: "stack" },
-    h("div", { class: "gsheet-cover", style: `--gc:${g.color};background-image:linear-gradient(180deg,transparent 30%,rgba(0,0,0,.45)),url(${coverUrl(id)})` },
+    h("div", { class: "gsheet-cover", style: `--gc:${g.color}` + (coverUrl(id) ? `;background-image:linear-gradient(180deg,transparent 30%,rgba(0,0,0,.45)),url(${coverUrl(id)})` : "") },
       h("div", { class: "row gap" }, tile(g.icon, 56, g.color), h("div", null, h("div", { class: "h1" }, meta.name), h("div", { class: "small" }, meta.desc)))),
     h("ol", { class: "rules" }, meta.rules.map((r) => h("li", null, r))),
     optsBox.childNodes.length ? h("div", { class: "card glass" }, h("div", { class: "h3", style: { marginBottom: "10px" } }, "Réglages"), optsBox) : null,
