@@ -10,6 +10,9 @@ const GAMES = (process.argv[3] || "puissance4,yams,huit,blackjack,poker,bataille
   p.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) errs.push("CONSOLE " + m.text()); });
   await p.goto((process.env.BASE || "http://localhost:8765") + "/?mock=1");
   await p.waitForSelector("#a-pseudo");
+  // le formulaire doit être réellement visible (rien ne doit le recouvrir)
+  const onTop = await p.evaluate(() => { const r = document.querySelector("#a-pseudo").getBoundingClientRect(); return document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)?.id; });
+  if (onTop !== "a-pseudo") errs.push("écran de connexion recouvert par : " + onTop);
   await p.fill("#a-pseudo", "testeur"); await p.fill("#a-email", "t@t.fr"); await p.fill("#a-pass", "secret1");
   await p.click("button[type=submit]");
   await p.waitForSelector(".gcard");

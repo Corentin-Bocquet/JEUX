@@ -178,7 +178,7 @@ export async function render(A, main, { route, args }) {
     const players = playerMap(r);
     const gains = h("div", { class: "gains" });
     const box = h("div", { class: "result" },
-      h("div", { html: avatarHTML({ ...players[me], photo: null }, 110) }),
+      h("img", { class: "result-img", src: win || draw ? "assets/img/victoire.webp" : "assets/img/defaite.webp", width: 150, height: 150, alt: "" }),
       h("div", { class: "place" }, win ? "Victoire !" : draw ? "Égalité !" : mine ? `${mine.rank}e place` : "Partie finie"),
       gains,
       h("div", { class: "rk list" }, ranking.map((x) => {

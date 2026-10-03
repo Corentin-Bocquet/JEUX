@@ -6,7 +6,7 @@ import { REWARDS } from "../catalog.js";
 
 let cat = "Tous";
 // illustrations facultatives : ajouter l'identifiant du jeu ici après avoir déposé assets/covers/<id>.webp
-const COVERS = [];
+const COVERS = ["poker", "blackjack", "huit", "bowling", "sudoku", "fleches", "motus", "motsmeles", "yams", "puissance4", "dames", "bataille"];
 const coverUrl = (id) => (COVERS.includes(id) ? `assets/covers/${id}.webp` : "");
 
 export function render(A, main) {
@@ -80,7 +80,7 @@ function gameCard(A, g) {
   return h("button", { class: "gcard", style: `--gc:${g.color}`, "aria-label": g.name, onclick: () => { sfx.tap(); openGame(A, g.id); } },
     coverUrl(g.id) ? h("div", { class: "cover", style: { backgroundImage: `url(${coverUrl(g.id)})` } }) : null,
     h("div", { class: "shine" }),
-    h("div", { class: "art" }, tile(g.icon, 54, g.color)),
+    coverUrl(g.id) ? null : h("div", { class: "art" }, tile(g.icon, 54, g.color)),
     h("div", { class: "nm" }, g.name),
     h("div", { class: "meta" },
       h("span", { class: "badge" }, g.min === g.max ? `${g.min} joueurs` : `${g.min}-${g.max} joueurs`),
@@ -95,7 +95,7 @@ function dailyCard(A) {
   const streak = ready ? (p.daily_streak || 0) : p.daily_streak || 1;
   const next = REWARDS.daily[Math.min((ready ? streak + 1 : streak + 1), 7) - 1];
   const card = h("button", { class: "daily" + (ready ? "" : " taken"), style: { width: "100%", marginTop: "12px", textAlign: "left" }, onclick: () => ready && openDaily(A) },
-    h("div", { class: "chest", html: chestSVG(64, ready) }),
+    h("img", { class: "chest", src: "assets/img/coffre.webp", width: 72, height: 72, alt: "" }),
     h("div", { class: "grow" },
       h("div", { class: "h3" }, ready ? "Ton coffre du jour est prêt !" : "Coffre ouvert, reviens demain"),
       h("div", { class: "small", style: { opacity: ".9" } }, ready ? "Touche pour l'ouvrir" : `Demain : ${next} gemmes`),
@@ -108,7 +108,7 @@ export async function openDaily(A) {
   const today = new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
   if (p.daily_last === today) { toast("Déjà ouvert aujourd'hui. Reviens demain !"); return; }
   const box = h("div", { class: "stack center", style: { alignItems: "center", padding: "10px 0 6px" } });
-  const chest = h("div", { class: "chest-anim", html: chestSVG(150, true) });
+  const chest = h("img", { class: "chest-anim", src: "assets/img/coffre.webp", width: 190, height: 190, alt: "Coffre du jour" });
   const txt = h("div", { class: "h2" }, "Touche le coffre !");
   box.append(chest, txt);
   const s = sheet(box, { title: "Coffre du jour" });
@@ -120,7 +120,7 @@ export async function openDaily(A) {
       const r = await A.api.daily();
       await new Promise((ok) => setTimeout(ok, 900));
       chest.classList.remove("shake"); chest.classList.add("open");
-      chest.innerHTML = chestSVG(150, true, true);
+      chest.src = "assets/img/coffre-ouvert.webp";
       if (r.ok) {
         confetti(90); sfx.win();
         txt.replaceChildren(h("span", { class: "row gap center" }, "+", fmt(r.gems), " ", gem(30)));
@@ -133,21 +133,6 @@ export async function openDaily(A) {
   });
 }
 
-export function chestSVG(size, glow, open) {
-  return `<svg viewBox="0 0 120 110" width="${size}" height="${size * 110 / 120}" aria-hidden="true">
-    <defs><linearGradient id="chw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C98444"/><stop offset="1" stop-color="#7A4419"/></linearGradient>
-    <linearGradient id="chg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE680"/><stop offset="1" stop-color="#D6A500"/></linearGradient>
-    <radialGradient id="chl" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#FFF6B0" stop-opacity=".95"/><stop offset="1" stop-color="#FFC800" stop-opacity="0"/></radialGradient></defs>
-    ${glow ? `<circle cx="60" cy="58" r="56" fill="url(#chl)" opacity="${open ? 1 : 0.55}"/>` : ""}
-    <ellipse cx="60" cy="102" rx="40" ry="6" fill="#000" opacity=".2"/>
-    <rect x="18" y="52" width="84" height="46" rx="8" fill="url(#chw)"/>
-    <rect x="18" y="52" width="84" height="8" fill="#000" opacity=".12"/>
-    <rect x="18" y="62" width="84" height="7" fill="url(#chg)"/><rect x="54" y="52" width="12" height="46" fill="url(#chg)"/>
-    ${open ? `<g><path d="M22 52 L30 18 L90 18 L98 52Z" fill="#8A4F1E" transform="translate(0 -6)"/><circle cx="46" cy="40" r="6" fill="#4FC3FF"/><circle cx="62" cy="34" r="7" fill="#1CB0F6"/><circle cx="76" cy="42" r="5" fill="#9BE7FF"/></g>`
-      : `<path d="M18 54 Q18 22 60 22 Q102 22 102 54Z" fill="url(#chw)"/><path d="M18 54 Q18 22 60 22 Q102 22 102 54" fill="none" stroke="#5E3311" stroke-width="2"/><rect x="54" y="22" width="12" height="32" fill="url(#chg)"/>`}
-    <rect x="52" y="60" width="16" height="16" rx="4" fill="#FFF3B0" stroke="#A06C00" stroke-width="2"/><circle cx="60" cy="67" r="2.4" fill="#A06C00"/>
-  </svg>`;
-}
 
 // ------------------------------------------------ fiche d'un jeu
 export async function openGame(A, id) {

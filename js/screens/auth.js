@@ -1,6 +1,5 @@
 // Connexion et inscription.
 import { h, toast, sfx, sheet } from "../ui.js";
-import { mascotSVG } from "../avatar.js";
 
 export function render(A, root) {
   let mode = "signup";
@@ -51,7 +50,7 @@ export function render(A, root) {
     catch (e) { toast(e.message, "err"); }
   }
   root.replaceChildren(h("div", { class: "auth" },
-    h("div", { class: "mascots-row", html: mascotSVG({ color: "color_rose", hat: "hat_couronne" }, 74) + mascotSVG({ color: "color_bleu", glasses: "glasses_soleil", outfit: "outfit_hero" }, 92) + mascotSVG({ color: "color_vert", hat: "hat_casquette" }, 74) }),
+    h("img", { class: "welcome-img", src: "assets/img/bienvenue.webp", width: 220, height: 220, alt: "" }),
     h("div", { class: "logo" }, "JEUX"),
     h("p", { class: "lead center" }, "12 jeux à plusieurs, des défis entre amis, des gemmes à gagner."),
     h("div", { class: "panel glass stack" }, h("div", { class: "seg" }, segS, segL), form)));
