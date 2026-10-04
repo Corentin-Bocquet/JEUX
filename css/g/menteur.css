@@ -1,0 +1,66 @@
+/* Menteur */
+.g-menteur { display: flex; flex-direction: column; gap: 8px; padding-bottom: 8px; }
+.g-menteur-seats { display: grid; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); gap: 6px; }
+.g-menteur-seat { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 4px 8px; border-radius: 16px;
+  background: var(--card); border: 2px solid var(--line); transition: transform .2s, border-color .2s, box-shadow .2s; min-width: 0; }
+.g-menteur-seat.turn { border-color: var(--green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 30%, transparent); transform: translateY(-2px); }
+.g-menteur-seat.poser { border-color: #EA580C; box-shadow: 0 0 0 3px rgba(234,88,12,.3); }
+.g-menteur-backs { position: relative; display: flex; justify-content: center; align-items: center; height: 34px; }
+.g-menteur-backs .pcard { margin-left: -14px; border-width: 2px; }
+.g-menteur-backs .pcard:first-child { margin-left: 0; }
+.g-menteur-count { position: absolute; right: -12px; top: -4px; background: #EA580C; color: #fff; border-radius: 99px; font-size: 12px; min-width: 22px; height: 22px;
+  display: grid; place-items: center; padding: 0 5px; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+.g-menteur-name { font-size: 12.5px; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--txt); }
+.g-menteur-tag { font-size: 10.5px; font-weight: 800; padding: 1px 7px; border-radius: 99px; white-space: nowrap; animation: g-menteur-pop .25s ease-out; }
+.g-menteur-tag.pose { background: #EA580C; color: #fff; }
+.g-menteur-tag.ok { background: color-mix(in srgb, var(--green) 25%, transparent); color: var(--txt); }
+.g-menteur-tag.wait { background: color-mix(in srgb, var(--txt) 12%, transparent); color: var(--dim); }
+.g-menteur-tag.call { background: var(--red); color: #fff; }
+
+.g-menteur-felt { min-height: 270px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 8px; overflow: hidden; }
+.g-menteur-info { position: relative; display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; font-size: 11px; z-index: 1; }
+.g-menteur-info span { background: rgba(0,0,0,.28); padding: 2px 8px; border-radius: 99px; }
+.g-menteur-pile { position: relative; width: 120px; height: 96px; display: grid; place-items: center; }
+.g-menteur-pc { grid-area: 1 / 1; transform: rotate(var(--r)) translateY(calc(var(--i) * -1.5px)); }
+.g-menteur-pempty { width: 60px; height: 84px; border: 2px dashed rgba(255,255,255,.35); border-radius: 10px; display: grid; place-items: center; font-size: 11px; text-align: center; }
+.g-menteur-pilen { position: absolute; right: 2px; bottom: 2px; background: rgba(0,0,0,.6); color: #fff; border-radius: 99px; padding: 1px 9px; font-size: 13px; z-index: 9; }
+.g-menteur-pile.shake { animation: g-menteur-shake .5s ease-in-out; }
+.g-menteur-ann { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; text-align: center; }
+.g-menteur-annbig { font-family: var(--title); font-size: 24px; line-height: 1.15; text-shadow: 0 2px 4px rgba(0,0,0,.45); animation: g-menteur-pop .35s cubic-bezier(.2,1.5,.4,1); }
+.g-menteur-annbig b { color: #FFE27A; font-size: 28px; }
+.g-menteur-who { opacity: .95; }
+.g-menteur-alert { background: var(--red); color: #fff; font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 99px; animation: g-menteur-pulse 1s infinite; }
+.g-menteur-bar { width: 78%; height: 8px; border-radius: 99px; background: rgba(0,0,0,.3); overflow: hidden; }
+.g-menteur-bar i { display: block; height: 100%; width: 100%; border-radius: inherit; background: linear-gradient(90deg, #EF4444, #F59E0B, #22C55E); background-size: 300% 100%;
+  transform-origin: left; animation-name: g-menteur-count; animation-timing-function: linear; animation-fill-mode: forwards; }
+.g-menteur-reveal { display: flex; gap: 4px; perspective: 600px; }
+.g-menteur-flip { animation: g-menteur-flip .5s ease-out backwards; animation-delay: calc(var(--i) * .12s); }
+.g-menteur-flip .pcard { --cw: 50px; }
+.g-menteur-verdict { font-family: var(--title); font-size: 24px; animation: g-menteur-pop .4s .3s cubic-bezier(.2,1.6,.4,1) backwards; }
+.g-menteur-verdict.lie { color: #FF8A8A; }
+.g-menteur-verdict.true { color: #8AF0B0; }
+.g-menteur-soft { opacity: .85; }
+.g-menteur-next { margin-top: auto; background: rgba(0,0,0,.3); padding: 5px 14px; border-radius: 99px; font-size: 14px; font-weight: 700; }
+
+.g-menteur-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.g-menteur-actions.col { flex-direction: column; align-items: center; }
+.g-menteur-actions .btn { min-height: 50px; min-width: 140px; }
+.g-menteur-liar { font-size: 19px; animation: g-menteur-pulse 1s infinite; }
+.g-menteur-vals { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.g-menteur-val { min-height: 44px; min-width: 64px; justify-content: center; cursor: pointer; border: 2px solid var(--line); background: var(--card); color: var(--txt); font-weight: 700; }
+.g-menteur-val.on { background: #EA580C; border-color: #EA580C; color: #fff; }
+.g-menteur-mine { text-align: center; }
+.g-menteur-hand { position: relative; height: 132px; container-type: inline-size; }
+.g-menteur-hc { position: absolute; bottom: 8px; padding: 0; border: 0; background: none; border-radius: 9px; transform-origin: 50% 120%; transition: transform .18s cubic-bezier(.2,.9,.3,1.2); }
+.g-menteur-hc .pcard { --cw: 62px; }
+.g-menteur-hc.match .pcard { box-shadow: 0 0 0 2px rgba(34,197,94,.8), 0 6px 14px rgba(0,0,0,.3); }
+.g-menteur-hc.sel .pcard { box-shadow: 0 0 0 3px var(--gold), 0 12px 20px rgba(0,0,0,.35); }
+.g-menteur-hc:disabled { cursor: default; }
+.g-menteur-fly .pcard { --cw: 48px; }
+@media (min-width: 600px) { .g-menteur-hc .pcard { --cw: 72px; } .g-menteur-hand { height: 150px; } }
+
+@keyframes g-menteur-pop { from { transform: scale(.5); opacity: 0; } }
+@keyframes g-menteur-pulse { 50% { transform: scale(1.06); } }
+@keyframes g-menteur-count { from { transform: scaleX(1); background-position: 100% 0; } to { transform: scaleX(0); background-position: 0 0; } }
+@keyframes g-menteur-flip { from { transform: rotateY(90deg) scale(.8); } }
+@keyframes g-menteur-shake { 20%, 60% { transform: translateX(-6px) rotate(-3deg); } 40%, 80% { transform: translateX(6px) rotate(3deg); } }

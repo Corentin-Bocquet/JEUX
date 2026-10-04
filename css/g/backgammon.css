@@ -1,0 +1,111 @@
+/* ---------- Backgammon ---------- */
+.g-backgammon { max-width: 640px; margin: 0 auto; }
+.g-backgammon-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 4px 0 6px; }
+.g-backgammon-chip { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 16px; background: var(--card); border: 2px solid var(--line); min-width: 0; transition: border-color .2s, box-shadow .2s; }
+.g-backgammon-chip.turn { border-color: var(--green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 30%, transparent); }
+.g-backgammon-name { flex: 1; min-width: 0; display: flex; flex-direction: column; font-weight: 800; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-backgammon-name small { font-size: 11px; color: var(--dim); font-weight: 700; }
+.g-backgammon-pts { font-family: var(--title); font-size: 24px; line-height: 1; }
+.g-backgammon-info { text-align: center; font-size: 13px; font-weight: 700; color: var(--dim); margin: 0 0 6px; display: flex; flex-direction: column; gap: 2px; }
+
+/* plateau : 12 flèches + barre + plateau de sortie, tailles en fonction de la largeur */
+.g-backgammon-wrap { container-type: inline-size; }
+.g-backgammon-board {
+  --p: calc((100cqw - 32px) / 14.4);
+  display: grid; position: relative; padding: 6px; border-radius: 18px; touch-action: manipulation;
+  grid-template-columns: repeat(6, var(--p)) calc(var(--p) * 1.1) repeat(6, var(--p)) calc(var(--p) * 1.3);
+  grid-template-rows: calc(var(--p) * 5.3) calc(var(--p) * 1.7) calc(var(--p) * 5.3);
+  column-gap: 0;
+  background:
+    repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0 2px, transparent 2px 9px),
+    linear-gradient(180deg, #E5C38A, #D3A964);
+  border: 6px solid #6B3F1D;
+  box-shadow: 0 0 0 2px #3E220C, 0 14px 30px rgba(0,0,0,.4), inset 0 0 18px rgba(80,40,0,.35);
+  user-select: none; -webkit-user-select: none;
+}
+.g-backgammon-board.live .src, .g-backgammon-board.live .sel { touch-action: none; }
+
+/* flèches */
+.g-backgammon-pt { position: relative; padding: 0; border: 0; background: none; display: flex; flex-direction: column; align-items: center; cursor: default; min-width: 0; }
+.g-backgammon-pt.bot { flex-direction: column-reverse; }
+.g-backgammon-tri { position: absolute; inset: 0 6%; pointer-events: none; }
+.g-backgammon-pt.top .g-backgammon-tri { clip-path: polygon(0 0, 100% 0, 50% 92%); }
+.g-backgammon-pt.bot .g-backgammon-tri { clip-path: polygon(0 100%, 100% 100%, 50% 8%); }
+.g-backgammon-pt.odd .g-backgammon-tri { background: linear-gradient(180deg, #A8392A, #82261A); }
+.g-backgammon-pt.even .g-backgammon-tri { background: linear-gradient(180deg, #3B2A1E, #261A10); }
+.g-backgammon-pt.bot.odd .g-backgammon-tri { background: linear-gradient(0deg, #A8392A, #82261A); }
+.g-backgammon-pt.bot.even .g-backgammon-tri { background: linear-gradient(0deg, #3B2A1E, #261A10); }
+.g-backgammon-pt.last .g-backgammon-tri { filter: brightness(1.35) saturate(1.1); }
+.g-backgammon-pt.src { cursor: pointer; }
+.g-backgammon-pt.src .g-backgammon-stack .g-backgammon-ck:last-child { box-shadow: 0 0 0 2px #FFD54A, 0 2px 3px rgba(0,0,0,.4); }
+.g-backgammon-pt.sel .g-backgammon-stack .g-backgammon-ck:last-child { transform: scale(1.12); box-shadow: 0 0 0 3px #FFD54A, 0 0 14px #FFD54A; }
+.g-backgammon-pt.dst { cursor: pointer; }
+.g-backgammon-pt.dst::after { content: ""; position: absolute; left: 50%; width: calc(var(--p) * .55); height: calc(var(--p) * .55); margin-left: calc(var(--p) * -.275);
+  border-radius: 50%; background: rgba(88,204,2,.9); box-shadow: 0 0 0 3px rgba(255,255,255,.7), 0 0 14px rgba(88,204,2,.9); animation: g-backgammon-pulse 1s ease-in-out infinite; z-index: 3; pointer-events: none; }
+.g-backgammon-pt.top.dst::after { bottom: 6%; }
+.g-backgammon-pt.bot.dst::after { top: 6%; }
+.g-backgammon-pt.dst .g-backgammon-tri { filter: brightness(1.25); box-shadow: inset 0 0 0 100px rgba(88,204,2,.25); }
+.g-backgammon-pt.hover .g-backgammon-tri, .g-backgammon-tray.hover { outline: 3px solid #fff; }
+@keyframes g-backgammon-pulse { 50% { transform: scale(.75); opacity: .7; } }
+
+.g-backgammon-stack { position: relative; z-index: 2; display: flex; flex-direction: inherit; align-items: center; width: 100%; padding: 1px 0; }
+
+/* pions */
+.g-backgammon-ck { width: calc(var(--p) * .96); height: calc(var(--p) * .96); flex: none; border-radius: 50%; display: grid; place-items: center; position: relative; transition: transform .15s; }
+.g-backgammon-ck.c0 { background: radial-gradient(circle at 35% 30%, #FFFFFF, #F1E8D6 55%, #CDBB98); box-shadow: inset 0 0 0 2px rgba(150,120,80,.45), inset 0 0 0 calc(var(--p) * .2) rgba(255,255,255,.35), 0 2px 3px rgba(0,0,0,.4); }
+.g-backgammon-ck.c1 { background: radial-gradient(circle at 35% 30%, #7A3B2A, #3A1710 55%, #1C0A06); box-shadow: inset 0 0 0 2px rgba(255,200,170,.35), inset 0 0 0 calc(var(--p) * .2) rgba(255,255,255,.06), 0 2px 3px rgba(0,0,0,.5); }
+.g-backgammon-ck b { font-family: var(--title); font-size: calc(var(--p) * .5); line-height: 1; }
+.g-backgammon-ck.c0 b { color: #3A1710; }
+.g-backgammon-ck.c1 b { color: #FFF3E0; }
+.g-backgammon-ck.mini { width: 22px; height: 22px; }
+.g-backgammon-ghost, .g-backgammon-fly { position: fixed; left: 0; top: 0; z-index: 1000; pointer-events: none; }
+.g-backgammon-ghost { box-shadow: 0 10px 20px rgba(0,0,0,.45) !important; }
+
+/* barre centrale */
+.g-backgammon-bar { padding: 0; border: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+  background: linear-gradient(90deg, #5A3416, #7A4A22 50%, #5A3416); box-shadow: inset 0 0 6px rgba(0,0,0,.5); }
+.g-backgammon-bar.top { justify-content: flex-start; border-radius: 6px 6px 0 0; }
+.g-backgammon-bar.bot { flex-direction: column-reverse; justify-content: flex-start; border-radius: 0 0 6px 6px; }
+.g-backgammon-bar.src { cursor: pointer; }
+.g-backgammon-bar.src .g-backgammon-ck:last-child { box-shadow: 0 0 0 2px #FFD54A, 0 2px 3px rgba(0,0,0,.4); animation: g-backgammon-pulse 1s ease-in-out infinite; }
+.g-backgammon-bar.sel .g-backgammon-ck:last-child { box-shadow: 0 0 0 3px #FFD54A, 0 0 14px #FFD54A; animation: none; }
+.g-backgammon-barmid { display: grid; place-items: center; background: linear-gradient(90deg, #5A3416, #7A4A22 50%, #5A3416); }
+.g-backgammon-cube { width: calc(var(--p) * .95); height: calc(var(--p) * .95); border-radius: 6px; display: grid; place-items: center; background: linear-gradient(180deg, #FFFFFF, #E9E4D8);
+  color: #3A1710; font-family: var(--title); font-size: calc(var(--p) * .42); box-shadow: 0 2px 0 #9A8C70, 0 3px 6px rgba(0,0,0,.4); }
+.g-backgammon-cube.off { opacity: .55; }
+
+/* plateau de sortie */
+.g-backgammon-tray { position: relative; padding: 3px 2px; margin-left: 4px; border: 0; border-radius: 6px; display: flex; flex-direction: column; align-items: center;
+  background: linear-gradient(180deg, #4A2A10, #3A200B); box-shadow: inset 0 0 8px rgba(0,0,0,.6); }
+.g-backgammon-tray.bot { justify-content: flex-end; }
+.g-backgammon-offstack { display: flex; flex-direction: column; gap: 1px; width: 100%; align-items: center; }
+.g-backgammon-tray.bot .g-backgammon-offstack { flex-direction: column-reverse; }
+.g-backgammon-slab { display: block; width: 86%; height: calc(var(--p) * .28); border-radius: 3px; }
+.g-backgammon-slab.c0 { background: linear-gradient(180deg, #FFFFFF, #D9CBAE); }
+.g-backgammon-slab.c1 { background: linear-gradient(180deg, #7A3B2A, #2A0F08); }
+.g-backgammon-tray small { position: absolute; left: 0; right: 0; font-family: var(--title); font-size: 12px; color: #FFE7B8; text-shadow: 0 1px 2px #000; }
+.g-backgammon-tray.top small { bottom: 2px; }
+.g-backgammon-tray.bot small { top: 2px; }
+.g-backgammon-tray.dst { cursor: pointer; box-shadow: inset 0 0 0 3px rgba(88,204,2,.95), 0 0 14px rgba(88,204,2,.8); animation: g-backgammon-glow 1s ease-in-out infinite; }
+@keyframes g-backgammon-glow { 50% { box-shadow: inset 0 0 0 3px rgba(88,204,2,.5), 0 0 4px rgba(88,204,2,.4); } }
+.g-backgammon-traymid { margin-left: 4px; }
+
+/* dés */
+.g-backgammon-dice { display: flex; align-items: center; justify-content: center; gap: calc(var(--p) * .3); z-index: 4; }
+.g-backgammon-die .die { width: calc(var(--p) * 1.35); height: calc(var(--p) * 1.35); padding: calc(var(--p) * .2); border-radius: calc(var(--p) * .3); box-shadow: 0 3px 0 #B9BCD0, 0 5px 10px rgba(0,0,0,.35); }
+.g-backgammon-die .die i { width: calc(var(--p) * .24); height: calc(var(--p) * .24); }
+.g-backgammon-die.used .die { opacity: .35; transform: scale(.85); }
+.g-backgammon-die.roll .die { animation: g-backgammon-roll .55s cubic-bezier(.2,.8,.3,1.2); }
+.g-backgammon-die.roll:nth-child(2) .die { animation-delay: .06s; }
+@keyframes g-backgammon-roll { 0% { transform: translateY(-30px) rotate(-260deg) scale(.5); opacity: 0; } 60% { transform: translateY(4px) rotate(20deg) scale(1.1); opacity: 1; } }
+.g-backgammon-rollbtn { padding: 8px 16px; min-height: 44px; border-radius: 14px; border: 0; font-weight: 900; font-size: 16px; color: #fff;
+  background: linear-gradient(180deg, #4CC417, #2E9A06); box-shadow: 0 4px 0 #1F6B03, 0 8px 14px rgba(0,0,0,.3); animation: g-backgammon-bounce 1.2s ease-in-out infinite; }
+@keyframes g-backgammon-bounce { 50% { transform: translateY(-3px); } }
+
+.g-backgammon-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 12px; min-height: 48px; }
+.g-backgammon-btns .btn { min-height: 46px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .g-backgammon-die.roll .die, .g-backgammon-rollbtn, .g-backgammon-pt.dst::after, .g-backgammon-tray.dst, .g-backgammon-bar.src .g-backgammon-ck:last-child { animation: none; }
+}
+.g-backgammon-btns .btn { flex: 1 1 0; max-width: 230px; padding-left: 10px; padding-right: 10px; }

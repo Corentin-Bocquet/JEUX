@@ -1,0 +1,48 @@
+/* ---------- Reversi ---------- */
+.g-reversi { max-width: 520px; margin: 0 auto; }
+.g-reversi-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 4px 0 6px; }
+.g-reversi-chip { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 16px; background: var(--card); border: 2px solid var(--line); min-width: 0; transition: border-color .2s, box-shadow .2s; }
+.g-reversi-chip.turn { border-color: var(--green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 30%, transparent); }
+.g-reversi-name { flex: 1; min-width: 0; display: flex; flex-direction: column; font-weight: 800; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-reversi-name small { font-size: 11px; color: var(--dim); font-weight: 700; }
+.g-reversi-count { font-family: var(--title); font-size: 24px; line-height: 1; }
+.g-reversi-dot { width: 22px; height: 22px; border-radius: 50%; flex: none; display: inline-block; }
+.g-reversi-dot.b { background: radial-gradient(circle at 35% 30%, #5B5B66, #18181E 65%); box-shadow: 0 2px 0 #000; }
+.g-reversi-dot.w { background: radial-gradient(circle at 35% 30%, #FFFFFF, #E4E4EC 65%); box-shadow: 0 2px 0 #9A9AAA; }
+.g-reversi-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin: 0 4px 10px; background: #EDEDF3; }
+.g-reversi-bar .b { background: #1E1E26; transition: width .5s ease; }
+.g-reversi-bar .w { flex: 1; background: #F4F4F8; }
+.g-reversi-pass { text-align: center; font-weight: 800; font-size: 14px; padding: 8px 12px; margin: 0 0 8px; border-radius: 14px;
+  background: color-mix(in srgb, var(--gold) 22%, var(--card)); color: var(--txt); animation: g-reversi-pop .35s ease-out; }
+@keyframes g-reversi-pop { from { transform: scale(.85); opacity: 0; } }
+
+.g-reversi-frame { padding: 10px; border-radius: 22px; background: linear-gradient(180deg, #3D2A17, #23170B); box-shadow: 0 6px 0 #140C05, 0 16px 30px rgba(0,0,0,.35), inset 0 2px 0 rgba(255,255,255,.15); }
+.g-reversi-board { display: grid; gap: 2px; padding: 2px; border-radius: 12px; background: #0B4A26; }
+.g-reversi-sq { aspect-ratio: 1; position: relative; display: grid; place-items: center; padding: 0; border: 0; border-radius: 4px;
+  background: radial-gradient(circle at 50% 40%, #23A55A, #13813F); perspective: 300px; cursor: default; }
+.g-reversi-sq:disabled { opacity: 1; }
+.g-reversi-sq.can { cursor: pointer; }
+.g-reversi-sq.can:not(:disabled):hover, .g-reversi-sq.can:not(:disabled):focus-visible { background: radial-gradient(circle at 50% 40%, #35BE6E, #1A9A4D); }
+.g-reversi-sq.hint::after { content: ""; width: 30%; height: 30%; border-radius: 50%; background: rgba(255,255,255,.35); box-shadow: 0 0 0 2px rgba(255,255,255,.55); animation: g-reversi-hint 1.4s ease-in-out infinite; }
+.g-reversi-sq.hint:disabled::after { display: none; }
+@keyframes g-reversi-hint { 50% { transform: scale(.75); opacity: .6; } }
+.g-reversi-sq.last::before { content: ""; position: absolute; inset: 0; border-radius: 4px; box-shadow: inset 0 0 0 2px #FFD54A; z-index: 2; pointer-events: none; }
+
+.g-reversi-disc { position: absolute; inset: 9%; display: block; transform-style: preserve-3d; transition: transform .3s; }
+.g-reversi-disc b { position: absolute; inset: 0; border-radius: 50%; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.g-reversi-disc .fb { background: radial-gradient(circle at 35% 30%, #5B5B66, #1E1E26 55%, #0B0B10); box-shadow: inset 0 -3px 0 rgba(0,0,0,.4), 0 2px 3px rgba(0,0,0,.45); }
+.g-reversi-disc .fw { background: radial-gradient(circle at 35% 30%, #FFFFFF, #ECECF2 55%, #C4C4D0); box-shadow: inset 0 -3px 0 rgba(0,0,0,.15), 0 2px 3px rgba(0,0,0,.35); transform: rotateY(180deg); }
+.g-reversi-disc.w { transform: rotateY(180deg); }
+.g-reversi-disc.flip-to-b { animation: g-reversi-tob .5s ease-in-out both; }
+.g-reversi-disc.flip-to-w { animation: g-reversi-tow .5s ease-in-out both; }
+@keyframes g-reversi-tob { from { transform: rotateY(180deg); } 50% { transform: rotateY(90deg) scale(1.15); } to { transform: rotateY(0deg); } }
+@keyframes g-reversi-tow { from { transform: rotateY(0deg); } 50% { transform: rotateY(90deg) scale(1.15); } to { transform: rotateY(180deg); } }
+.g-reversi-disc.drop { animation: g-reversi-drop .28s cubic-bezier(.3, 1.4, .6, 1); }
+.g-reversi-disc.w.drop { animation-name: g-reversi-dropw; }
+@keyframes g-reversi-drop { from { transform: scale(1.6); opacity: 0; } }
+@keyframes g-reversi-dropw { from { transform: rotateY(180deg) scale(1.6); opacity: 0; } to { transform: rotateY(180deg); } }
+
+.g-reversi-board.n10 { gap: 1px; }
+@media (prefers-reduced-motion: reduce) {
+  .g-reversi-disc.flip-to-b, .g-reversi-disc.flip-to-w, .g-reversi-disc.drop, .g-reversi-sq.hint::after { animation: none; }
+}

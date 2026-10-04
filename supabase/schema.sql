@@ -389,7 +389,7 @@ end $$;
 create or replace function public.jeux_room_claim(p_room uuid)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare me uuid := auth.uid(); r public.jeux_rooms; rk jsonb; place int; humans int; outcome text; v_round int;
-  v_gems int; v_xp int; best int; nb_best int; prof public.jeux_profiles;
+  v_gems int; v_xp int; best int; nb_best int; prof public.jeux_profiles; team_win boolean := false;
   tg int[] := array[30,15,8,5]; tx int[] := array[120,70,45,30];
 begin
   select * into r from jeux_rooms where id = p_room;
@@ -405,7 +405,13 @@ begin
   place := greatest(1, coalesce((rk->>'rank')::int, 99));
   select count(*) into humans from jsonb_array_elements(r.players) p where coalesce((p->>'bot')::boolean,false) = false;
   select count(*) into nb_best from jsonb_array_elements(r.state->'result'->'ranking') e where (e->>'rank')::int = 1;
-  outcome := case when place = 1 and nb_best = 1 then 'win' when place = 1 then 'draw' else 'lose' end;
+  -- jeux en équipe : partenaires classés 1ers ensemble = victoire
+  select exists (
+    select 1 from jsonb_array_elements(coalesce(r.state->'result'->'teams', '[]'::jsonb)) t
+    where t ? me::text and not exists (
+      select 1 from jsonb_array_elements(r.state->'result'->'ranking') e
+      where (e->>'rank')::int = 1 and not (t ? (e->>'id')))) into team_win;
+  outcome := case when place = 1 and (nb_best = 1 or team_win) then 'win' when place = 1 then 'draw' else 'lose' end;
   if humans >= 2 then
     v_gems := tg[least(place, 4)]; v_xp := tx[least(place, 4)];
     if outcome = 'draw' then v_gems := 15; v_xp := 70; end if;

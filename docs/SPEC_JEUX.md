@@ -67,6 +67,8 @@ export function botDelay(state, pid, rng) { ms }    // facultatif : temps de ré
   de n'importe quel réglage retombe sur le défaut.
 - L'état est réécrit en entier à chaque coup sur Supabase : garde-le compact (idéalement < 30 Ko).
 - Classement : `rankByScore(entries, lowWins)` ; donne un `score` parlant (points, jetons...).
+- Jeux en ÉQUIPE : `result()` renvoie `{ ranking, teams: [[id1, id3], [id2, id4]] }`. Des partenaires classés 1ers
+  ensemble comptent comme vainqueurs (et non à égalité), à l'écran comme pour les gemmes.
 
 ## 3. MULTIJOUEUR OBLIGATOIRE
 
@@ -95,7 +97,7 @@ Chaque mode doit correspondre à une combinaison distincte. Les options doivent 
 ```js
 export function mount(root, ctx) { /* construit dans root */ return { update(ctx) {...}, destroy() {...} }; }
 export const scoreOf = (state, id) => ...;   // facultatif : score affiché dans la bande des joueurs
-export const scoreLabel = (score) => "...";  // facultatif : texte du score dans les résultats
+export const scoreLabel = (score, state, id) => "...";  // facultatif : texte du score dans les résultats
 ```
 ctx = `{ state, me, players (id -> {name, bot, avatar}), order, room, settings, act(action), skin, sfx, toast, buzz, isHost }`.
 `ctx.act(action)` envoie l'action (le moteur ajoute seed et now). `update` est appelé à chaque changement d'état.

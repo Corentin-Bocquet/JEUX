@@ -1,0 +1,80 @@
+/* Pierre feuille ciseaux : arène, boutons de signes, révélation 3-2-1 */
+.g-pfc { position: relative; max-width: 560px; margin: 0 auto; }
+.g-pfc > div:first-child { display: flex; flex-direction: column; gap: 10px; }
+.g-pfc .turnmsg { margin: 0; }
+.g-pfc-head { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+
+.g-pfc-vs { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; padding: 14px 10px; border-radius: 24px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--blue) 26%, var(--card)), var(--card)); border: 2px solid var(--line); }
+.g-pfc-vsx { font-family: var(--title); font-size: 26px; color: var(--gold); text-shadow: 0 2px 0 rgba(0,0,0,.25); }
+.g-pfc-seat { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; padding: 6px; border-radius: 18px; transition: background .2s; }
+.g-pfc-seat.done { background: color-mix(in srgb, var(--green) 16%, transparent); }
+.g-pfc-hand { font-size: 46px; line-height: 1.1; height: 56px; display: grid; place-items: center; }
+.g-pfc-seat:not(.done) .g-pfc-hand { animation: g-pfc-think 1.4s ease-in-out infinite; }
+.g-pfc-who { font-weight: 800; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-pfc-stars { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+.g-pfc-stars i { width: 12px; height: 12px; border-radius: 50%; background: var(--line); }
+.g-pfc-stars i.on { background: var(--gold); box-shadow: 0 0 8px color-mix(in srgb, var(--gold) 70%, transparent); }
+
+.g-pfc-table { display: grid; grid-template-columns: repeat(auto-fit, minmax(78px, 1fr)); gap: 8px; padding: 10px; border-radius: 24px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--blue) 22%, var(--card)), var(--card)); border: 2px solid var(--line); }
+.g-pfc-table .g-pfc-hand { font-size: 34px; height: 42px; }
+.g-pfc-seat.me { box-shadow: inset 0 0 0 2px var(--blue); }
+.g-pfc-wait { text-align: center; font-weight: 700; padding: 22px 14px; }
+
+.g-pfc-bracket { display: flex; flex-direction: column; gap: 6px; }
+.g-pfc-match { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; padding: 8px 12px; border-radius: 14px; background: var(--card); border: 2px solid var(--line); font-size: 14px; }
+.g-pfc-match.me { border-color: var(--blue); }
+.g-pfc-match span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-pfc-match span:last-child { text-align: right; }
+.g-pfc-match .w { color: var(--green); font-weight: 800; }
+.g-pfc-match .l { opacity: .5; text-decoration: line-through; }
+
+.g-pfc-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.g-pfc-pad.n5 { grid-template-columns: repeat(6, 1fr); }
+.g-pfc-pad.n5 .g-pfc-btn { grid-column: span 2; }
+.g-pfc-pad.n5 .g-pfc-btn:nth-child(4) { grid-column: 2 / span 2; }
+.g-pfc-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 96px; padding: 10px 4px; border-radius: 22px;
+  background: linear-gradient(180deg, var(--card2), var(--card)); border: 2px solid var(--line); box-shadow: 0 5px 0 var(--line); color: var(--txt);
+  transition: transform .12s, box-shadow .12s, opacity .2s; }
+.g-pfc-btn:not(:disabled):active { transform: translateY(4px); box-shadow: 0 1px 0 var(--line); }
+.g-pfc-btn:not(:disabled):hover { border-color: var(--blue); }
+.g-pfc-btn:disabled { opacity: .55; }
+.g-pfc-btn.sel { opacity: 1; border-color: var(--green); box-shadow: 0 5px 0 var(--green); background: color-mix(in srgb, var(--green) 20%, var(--card)); }
+.g-pfc-emo { font-size: 42px; line-height: 1.1; }
+.g-pfc-lbl { font-weight: 800; font-size: 14px; }
+.g-pfc-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; justify-content: center; }
+
+/* révélation */
+.g-pfc-ov { position: absolute; left: 0; right: 0; top: 40px; z-index: 5; padding: 16px 12px; border-radius: 26px; text-align: center;
+  background: color-mix(in srgb, var(--bg) 92%, transparent); border: 2px solid var(--line); box-shadow: 0 20px 40px rgba(0,0,0,.4);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); animation: g-pfc-in .2s ease-out; }
+.g-pfc-ov[hidden] { display: none; }
+.g-pfc-duel { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px; }
+.g-pfc-side { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; padding: 8px 4px; border-radius: 20px; transition: background .3s; }
+.g-pfc-side.win { background: color-mix(in srgb, var(--green) 24%, transparent); }
+.g-pfc-side.lose { opacity: .6; }
+.g-pfc-big { font-size: 68px; line-height: 1.1; }
+.g-pfc-big.flip { transform: scaleX(-1); }
+.g-pfc-big.shake { animation: g-pfc-shake .52s ease-in-out infinite; }
+.g-pfc-big.shown, .g-pfc-mid.shown { animation: g-pfc-pop .35s cubic-bezier(.2,1.6,.4,1); }
+.g-pfc-count { font-family: var(--title); font-size: 54px; color: var(--gold); min-width: 54px; animation: g-pfc-pop .45s ease-out; }
+.g-pfc-count.vs { font-size: 26px; }
+.g-pfc-count.solo { margin-bottom: 6px; }
+.g-pfc-cap { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+.g-pfc-res { font-family: var(--title); font-size: 22px; animation: g-pfc-pop .35s ease-out; }
+.g-pfc-res.good { color: var(--green); }
+.g-pfc-res.bad { color: var(--red); }
+.g-pfc-res.tie { color: var(--gold); }
+.g-pfc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)); gap: 6px; margin-bottom: 8px; }
+.g-pfc-cell { padding: 6px 2px; border-radius: 16px; background: var(--card); border: 2px solid var(--line); min-width: 0; }
+.g-pfc-cell.win { border-color: var(--green); background: color-mix(in srgb, var(--green) 20%, var(--card)); }
+.g-pfc-cell.me { box-shadow: inset 0 0 0 2px var(--blue); }
+.g-pfc-mid { font-size: 36px; line-height: 1.15; }
+.g-pfc-mid.shake { animation: g-pfc-shake .52s ease-in-out infinite; }
+
+@keyframes g-pfc-shake { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-14px) rotate(-8deg); } }
+@keyframes g-pfc-pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes g-pfc-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes g-pfc-think { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+@media (prefers-reduced-motion: reduce) { .g-pfc * { animation: none !important; } }

@@ -1,0 +1,11 @@
+/* Serpents et échelles */
+.g-serpents-board { aspect-ratio: 10 / 11; background: #14532D; --pw: 8.6%; }
+.g-serpents-grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(11, 1fr); }
+.g-serpents-cell { position: relative; border: 1px solid rgba(0, 0, 0, .08); }
+.g-serpents-cell span { position: absolute; left: 3px; top: 1px; font-size: 10px; font-weight: 800; color: rgba(30, 30, 60, .62); line-height: 1; }
+.g-serpents-cell.goal { background: linear-gradient(135deg, #FFE066, #F59E0B) !important; }
+.g-serpents-cell.goal span { inset: 0; display: grid; place-items: center; font-size: 22px; color: inherit; }
+.g-serpents-start { background: repeating-linear-gradient(135deg, #166534 0 10px, #15803D 10px 20px); display: flex; align-items: center; padding-left: 10px; }
+.g-serpents-start span { color: #fff; font-size: 14px; font-weight: 800; text-shadow: 0 1px 2px rgba(0, 0, 0, .5); }
+.g-serpents-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; filter: drop-shadow(0 1.5px 1px rgba(0, 0, 0, .35)); }
+@media (min-width: 600px) { .g-serpents-cell span { font-size: 12px; } }

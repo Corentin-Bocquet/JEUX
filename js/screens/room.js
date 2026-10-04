@@ -270,8 +270,12 @@ export async function render(A, main, { route, args }) {
     const ranking = st.result.ranking;
     const mine = ranking.find((x) => x.id === me);
     const nbFirst = ranking.filter((x) => x.rank === 1).length;
-    const win = mine && mine.rank === 1 && nbFirst === 1;
-    const draw = mine && mine.rank === 1 && nbFirst > 1;
+    // jeux en équipe : des partenaires classés 1ers ensemble ont gagné (pas une égalité)
+    const firsts = ranking.filter((x) => x.rank === 1).map((x) => x.id);
+    const team = (st.result.teams || []).find((t) => t.includes(me));
+    const teamWin = !!team && firsts.every((id) => team.includes(id));
+    const win = mine && mine.rank === 1 && (nbFirst === 1 || teamWin);
+    const draw = mine && mine.rank === 1 && !win;
     const players = playerMap(r);
     const gains = h("div", { class: "gains" });
     const box = h("div", { class: "result" },
@@ -283,7 +287,7 @@ export async function render(A, main, { route, args }) {
         return h("div", { class: "item glass" + (x.id === me ? " me" : "") }, h("span", { class: "rank-n" }, x.rank),
           h("div", { class: "av", html: avatarHTML(p, 40), style: { width: "40px", height: "40px" } }),
           h("div", { class: "grow", style: { textAlign: "left" } }, p.name),
-          x.score != null && view.scoreLabel ? h("span", { class: "dim small" }, view.scoreLabel(x.score)) : x.score != null ? h("b", null, fmt(x.score)) : null);
+          x.score != null && view.scoreLabel ? h("span", { class: "dim small" }, view.scoreLabel(x.score, st, x.id)) : x.score != null ? h("b", null, fmt(x.score)) : null);
       })),
       h("div", { class: "row gap", style: { width: "100%" } },
         h("button", { class: "btn ghost grow", onclick: () => { gone = true; if (!solo) store.leave(r.id).catch(() => {}); A.go("/"); } }, "Quitter"),

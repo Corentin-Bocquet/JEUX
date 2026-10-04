@@ -1,0 +1,34 @@
+/* Morpion */
+.g-morpion { max-width: 440px; margin: 0 auto; --g-morpion-x: #FF5A6E; --g-morpion-o: #2EC4F0; }
+.g-morpion-players { display: flex; gap: 10px; margin: 10px 0 12px; }
+.g-morpion-pl { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 16px;
+  background: var(--card); border: 2px solid var(--line); transition: border-color var(--t-mid), transform var(--t-mid), box-shadow var(--t-mid); }
+.g-morpion-pl.on { border-color: #14B8A6; box-shadow: 0 0 0 3px rgba(20, 184, 166, .25); transform: translateY(-2px); }
+.g-morpion-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-morpion-sc { font-family: var(--title); font-size: 22px; min-width: 22px; text-align: right; }
+.g-morpion-board { display: grid; gap: 8px; padding: 10px; border-radius: 24px; aspect-ratio: 1;
+  background: linear-gradient(160deg, #17C3B2, #0E8F86); box-shadow: 0 6px 0 #0A6A63, 0 16px 30px rgba(0, 0, 0, .3), inset 0 2px 0 rgba(255, 255, 255, .35); }
+.g-morpion-board.n5 { gap: 6px; padding: 8px; }
+.g-morpion-cell { position: relative; border-radius: 16px; background: var(--card); min-height: 44px;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .12); display: grid; place-items: center; transition: background var(--t-fast), transform var(--t-fast); }
+.g-morpion-board.n5 .g-morpion-cell { border-radius: 12px; }
+.g-morpion-cell:disabled { cursor: default; opacity: 1; }
+.g-morpion-cell.free:hover, .g-morpion-cell.free:focus-visible { background: var(--card2); }
+.g-morpion-cell.free:active { transform: scale(.94); }
+.g-morpion-cell.win { background: #FFF4C2; box-shadow: 0 0 0 3px var(--gold), 0 0 18px rgba(255, 200, 0, .7); animation: g-morpion-pulse 1s ease-in-out infinite alternate; }
+.g-morpion-mark { width: 78%; height: 78%; display: block; }
+.g-morpion-mark svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.g-morpion-stroke { fill: none; stroke-width: 13; stroke-linecap: round; }
+.g-morpion-mark.m1 .g-morpion-stroke { stroke: var(--g-morpion-x); }
+.g-morpion-mark.m2 .g-morpion-stroke { stroke: var(--g-morpion-o); }
+.g-morpion-mark.pop .g-morpion-stroke { stroke-dasharray: 180; stroke-dashoffset: 180; animation: g-morpion-draw .32s ease-out forwards; }
+.g-morpion-mark.leaving { opacity: .35; animation: g-morpion-blink 1.4s ease-in-out infinite; }
+.g-morpion-mark.mini { width: 24px; height: 24px; flex: none; }
+.g-morpion-mark.mini .g-morpion-stroke { stroke-width: 16; }
+.g-morpion-ghost { position: absolute; inset: 22%; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, .8), transparent 70%); animation: g-morpion-poof .5s ease-out forwards; }
+.g-morpion-info { margin: 12px 0 0; }
+@keyframes g-morpion-draw { to { stroke-dashoffset: 0; } }
+@keyframes g-morpion-pulse { from { transform: scale(1); } to { transform: scale(1.04); } }
+@keyframes g-morpion-blink { 50% { opacity: .6; } }
+@keyframes g-morpion-poof { from { opacity: 1; transform: scale(.6); } to { opacity: 0; transform: scale(1.4); } }
+@media (min-width: 700px) { .g-morpion { max-width: 520px; } }

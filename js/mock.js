@@ -345,7 +345,10 @@ export function createApi() {
           const rk = r.state.result.ranking.find((x) => x.id === id);
           const place = rk.rank;
           const nbBest = r.state.result.ranking.filter((x) => x.rank === 1).length;
-          const outcome = place === 1 && nbBest === 1 ? "win" : place === 1 ? "draw" : "lose";
+          const firsts = r.state.result.ranking.filter((x) => x.rank === 1).map((x) => x.id);
+          const team = (r.state.result.teams || []).find((t) => t.includes(id));
+          const teamWin = !!team && firsts.every((f) => team.includes(f));
+          const outcome = place === 1 && (nbBest === 1 || teamWin) ? "win" : place === 1 ? "draw" : "lose";
           const humans = r.players.filter((p) => !p.bot).length;
           let gems, xp;
           if (humans >= 2) { ({ gems, xp } = REWARDS.multi[Math.min(place, 4) - 1]); if (outcome === "draw") { gems = 15; xp = 70; } }

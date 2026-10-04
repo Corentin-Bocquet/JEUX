@@ -1,0 +1,14 @@
+/* Jeu de l'oie */
+.g-oie-board { aspect-ratio: 1; background: linear-gradient(135deg, #FBBF24, #D97706); padding: 0; --pw: 9.5%; }
+.g-oie-grid { position: absolute; inset: 6px; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); gap: 3px; }
+.g-oie-cell { position: relative; border-radius: 9px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .12); color: #3B2A0A; overflow: hidden; min-width: 0; }
+.g-oie-cell b { position: absolute; left: 4px; top: 2px; font-size: 10px; line-height: 1; opacity: .7; }
+.g-oie-cell i { font-style: normal; font-size: 20px; line-height: 1; }
+.g-oie-cell small { font-size: 7.5px; font-weight: 800; line-height: 1; margin-top: 2px; text-transform: uppercase; letter-spacing: .02em; white-space: nowrap; }
+.g-oie-cell.goose { background: radial-gradient(circle at 50% 40%, #FFFFFF, #BAE6FD); }
+.g-oie-cell.trap { background: radial-gradient(circle at 50% 40%, #FECACA, #F87171); color: #4C0519; }
+.g-oie-cell.start { background: linear-gradient(135deg, #4ADE80, #16A34A); color: #fff; }
+.g-oie-cell.goal { background: radial-gradient(circle at 50% 40%, #FFF7AE, #F59E0B); box-shadow: 0 0 0 2px #fff inset, 0 0 14px rgba(255, 255, 255, .7); }
+.g-oie-cell.goal i { font-size: 26px; }
+@media (min-width: 600px) { .g-oie-cell b { font-size: 12px; } .g-oie-cell i { font-size: 26px; } .g-oie-cell small { font-size: 9px; } }

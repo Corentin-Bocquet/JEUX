@@ -1,0 +1,70 @@
+/* Échecs */
+.g-echecs { max-width: 480px; margin: 0 auto; --g-echecs-lt: #EDE8F7; --g-echecs-dk: #8C80CF; }
+.g-echecs-goal { margin: 4px 0 0; }
+.g-echecs-pl { display: flex; align-items: center; gap: 10px; padding: 8px 12px; margin: 8px 0; border-radius: 16px;
+  background: var(--card); border: 2px solid var(--line); transition: border-color var(--t-mid), box-shadow var(--t-mid); min-height: 52px; }
+.g-echecs-pl.on { border-color: #4F46E5; box-shadow: 0 0 0 3px rgba(79, 70, 229, .28); }
+.g-echecs-avatar { width: 34px; height: 34px; flex: none; border-radius: 10px; background: var(--g-echecs-dk); display: grid; place-items: center; }
+.g-echecs-avatar svg { width: 30px; height: 30px; }
+.g-echecs-plinfo { display: flex; flex-direction: column; gap: 2px; }
+.g-echecs-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 15px; }
+.g-echecs-name .dim { font-size: 12px; }
+.g-echecs-caps { display: flex; align-items: center; flex-wrap: wrap; min-height: 18px; }
+.g-echecs-cap { width: 18px; height: 18px; margin-right: -5px; }
+.g-echecs-cap svg { width: 100%; height: 100%; }
+.g-echecs-cap .g-echecs-svg.b, .g-echecs-avatar .g-echecs-svg.b { stroke: #CFC9F2; }
+.g-echecs-diff { margin-left: 10px; font-size: 13px; color: var(--dim); }
+.g-echecs-jok { font-size: 13px; padding: 4px 9px; border-radius: 99px; background: var(--card2); color: var(--dim); flex: none; }
+.g-echecs-chk { display: flex; gap: 4px; flex: none; }
+.g-echecs-chk i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--red); }
+.g-echecs-chk i.on { background: var(--red); }
+
+.g-echecs-wrap { position: relative; }
+.g-echecs-board { display: grid; grid-template-columns: repeat(8, 1fr); border-radius: 14px; overflow: hidden; aspect-ratio: 1;
+  border: 6px solid #3B347A; box-shadow: 0 6px 0 #241F55, 0 16px 30px rgba(0, 0, 0, .35); }
+.g-echecs-sq { position: relative; display: block; aspect-ratio: 1; min-width: 0; padding: 0; }
+.g-echecs-sq.lt { background: var(--g-echecs-lt); }
+.g-echecs-sq.dk { background: var(--g-echecs-dk); }
+.g-echecs-sq.hillsq.lt { background: #F6E3A6; } .g-echecs-sq.hillsq.dk { background: #CFA94A; }
+.g-echecs-sq.last::before { content: ""; position: absolute; inset: 0; background: rgba(255, 213, 0, .42); }
+.g-echecs-sq.sel::before { content: ""; position: absolute; inset: 0; background: rgba(79, 70, 229, .45); box-shadow: inset 0 0 0 3px #FFD500; }
+.g-echecs-sq.check::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle, #FF2D2D 0%, rgba(255, 45, 45, .75) 40%, rgba(255, 45, 45, 0) 78%); animation: g-echecs-throb 1s ease-in-out infinite alternate; }
+.g-echecs-sq.can::before { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .55); }
+.g-echecs-sq.dot::after { content: ""; position: absolute; left: 34%; top: 34%; width: 32%; height: 32%; border-radius: 50%; background: rgba(30, 24, 90, .42); z-index: 2; pointer-events: none; }
+.g-echecs-sq.cap::after { content: ""; position: absolute; inset: 4%; border-radius: 50%; border: 4px solid rgba(30, 24, 90, .5); z-index: 2; pointer-events: none; }
+.g-echecs-pc { position: absolute; inset: 4%; z-index: 1; display: block; pointer-events: none; }
+.g-echecs-pc.slide { animation: g-echecs-slide .22s ease-out; }
+.g-echecs-svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.g-echecs-svg.w { fill: #FFFFFF; stroke: #1E1B3A; stroke-width: 1.5; stroke-linejoin: round; filter: drop-shadow(0 1.5px 0 rgba(0, 0, 0, .35)); }
+.g-echecs-svg.b { fill: #24213D; stroke: #0B0A18; stroke-width: 1.5; stroke-linejoin: round; filter: drop-shadow(0 1.5px 0 rgba(0, 0, 0, .35)); }
+.g-echecs-svg .d { stroke-width: 1.2; }
+.g-echecs-svg.b .d, .g-echecs-svg.b .c { stroke: #D9D5F2; }
+.g-echecs-svg .c { stroke-width: 2.6; stroke-linecap: round; }
+.g-echecs-svg.w .c { stroke: #1E1B3A; }
+.g-echecs-svg .e { stroke: none; }
+.g-echecs-svg.w .e { fill: #1E1B3A; } .g-echecs-svg.b .e { fill: #D9D5F2; }
+.g-echecs-rk, .g-echecs-fl { position: absolute; font-size: 10px; line-height: 1; z-index: 3; pointer-events: none; opacity: .85; }
+.g-echecs-rk { left: 3px; top: 3px; } .g-echecs-fl { right: 3px; bottom: 2px; }
+.g-echecs-sq.lt .g-echecs-rk, .g-echecs-sq.lt .g-echecs-fl { color: #6A5FB5; }
+.g-echecs-sq.dk .g-echecs-rk, .g-echecs-sq.dk .g-echecs-fl { color: #F2EEFF; }
+
+.g-echecs-promo { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: rgba(10, 8, 30, .45); border-radius: 14px; animation: g-echecs-fade .15s; }
+.g-echecs-promobox { padding: 14px; border-radius: 20px; width: 92%; }
+.g-echecs-promorow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+.g-echecs-promobtn { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; border-radius: 14px; background: var(--g-echecs-dk); min-height: 44px; color: #fff; }
+.g-echecs-promobtn span { width: 52px; height: 52px; display: block; }
+.g-echecs-promobtn:active { transform: scale(.94); }
+
+.g-echecs-moves { display: flex; gap: 4px; align-items: center; overflow-x: auto; white-space: nowrap; padding: 8px 10px; border-radius: 14px;
+  background: var(--card); border: 1px solid var(--line); font-size: 14px; scrollbar-width: none; }
+.g-echecs-moves::-webkit-scrollbar { display: none; }
+.g-echecs-mvn { color: var(--dim); margin-left: 6px; }
+.g-echecs-mv { padding: 2px 6px; border-radius: 8px; }
+.g-echecs-mv.now { background: #4F46E5; color: #fff; }
+.g-echecs-acts { margin-top: 12px; }
+.g-echecs-alert { background: var(--red) !important; color: #fff !important; animation: g-echecs-shake .3s; }
+@keyframes g-echecs-slide { from { transform: translate(calc(var(--dx) * 108%), calc(var(--dy) * 108%)); } to { transform: none; } }
+@keyframes g-echecs-throb { from { opacity: .75; } to { opacity: 1; } }
+@keyframes g-echecs-fade { from { opacity: 0; } }
+@keyframes g-echecs-shake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+@media (min-width: 700px) { .g-echecs { max-width: 560px; } }

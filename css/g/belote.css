@@ -1,0 +1,109 @@
+/* Belote (et table partagée avec la manille, voir css/g/manille.css) */
+.g-belote { max-width: 520px; margin: 0 auto; padding-bottom: 8px; }
+
+/* ---------- scores d'équipe et atout ---------- */
+.g-belote-head { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
+.g-belote-team { display: flex; flex-direction: column; align-items: center; padding: 8px 6px; border-radius: 18px; background: var(--card); border: 2px solid var(--line); }
+.g-belote-team .lab { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--dim); }
+.g-belote-team b { font-family: var(--title); font-size: 26px; line-height: 1.1; }
+.g-belote-team.us { border-color: color-mix(in srgb, var(--green) 70%, transparent); }
+.g-belote-team.us b { color: var(--green); }
+.g-belote-team.them b { color: var(--orange); }
+.g-belote-mid { display: flex; align-items: center; gap: 6px; }
+.g-belote-goal { color: var(--dim); line-height: 1.25; text-align: left; font-size: 11px; }
+.g-belote-trump { width: 62px; height: 62px; border-radius: 50%; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 3px var(--gold), 0 6px 16px rgba(0,0,0,.3); color: #1B1B3A; }
+.g-belote-trump small { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; line-height: 1; color: #555C86; }
+.g-belote-trump.none { box-shadow: 0 0 0 3px var(--line), 0 6px 16px rgba(0,0,0,.2); }
+.g-belote-trump .g-belote-suit.big { font-size: 30px; line-height: 1.05; }
+.g-belote-suit { color: #1B1B3A; font-style: normal; }
+.g-belote-suit.red { color: #E0312F; }
+.g-belote-info .g-belote-suit, .turnmsg .g-belote-suit, .btn .g-belote-suit, .g-belote-bubble .g-belote-suit, .g-belote-banner .g-belote-suit {
+  display: inline-grid; place-items: center; width: 1.35em; height: 1.35em; border-radius: 50%; background: #fff; line-height: 1; font-size: .95em; vertical-align: -.15em; }
+.g-belote-info { text-align: center; font-size: 14px; margin: 0 0 8px; color: var(--txt); }
+.g-belote-lit { color: var(--gold-d); font-weight: 700; }
+
+/* ---------- tapis ---------- */
+.g-belote-felt { height: 330px; padding: 0; overflow: hidden; }
+.g-belote-seat { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 4px; z-index: 2; max-width: 110px; }
+.g-belote-seat.top { top: 8px; max-width: 200px; left: 50%; transform: translateX(-50%); }
+.g-belote-seat.left { left: 8px; top: 50%; transform: translateY(-60%); }
+.g-belote-seat.right { right: 8px; top: 50%; transform: translateY(-60%); }
+.g-belote-seat.bottom { bottom: 8px; left: 50%; transform: translateX(-50%); }
+.g-belote-name { font-size: 12px; font-weight: 800; padding: 3px 9px; border-radius: 99px; background: rgba(0,0,0,.35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
+.g-belote-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: #C8F59A; margin-top: -2px; }
+.g-belote-seat.us .g-belote-name { box-shadow: inset 0 0 0 2px rgba(88,204,2,.75); }
+.g-belote-seat.them .g-belote-name { box-shadow: inset 0 0 0 2px rgba(255,150,0,.75); }
+.g-belote-seat.turn .g-belote-name { background: var(--gold); color: #1B1B3A; animation: g-belote-pulse 1.2s ease-in-out infinite; }
+@keyframes g-belote-pulse { 50% { box-shadow: 0 0 0 5px rgba(255,200,0,.35); } }
+.g-belote-dealer { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: #fff; color: #1B1B3A; font-style: normal; font-size: 10px; margin-right: 4px; vertical-align: 1px; }
+.g-belote-backs { display: flex; }
+.g-belote-backs .pcard { border-width: 2px; margin-left: -12px; }
+.g-belote-backs .pcard:first-child { margin-left: 0; }
+.g-belote-seat.left .g-belote-backs .pcard, .g-belote-seat.right .g-belote-backs .pcard { margin-left: -14px; }
+.g-belote-bubble { font-size: 12px; font-weight: 800; padding: 3px 9px; border-radius: 12px; background: #fff; color: #1B1B3A; box-shadow: 0 4px 10px rgba(0,0,0,.25); animation: g-belote-pop .25s ease-out; white-space: nowrap; }
+.g-belote-seat.bottom .g-belote-bubble { position: absolute; bottom: 100%; margin-bottom: 4px; }
+.g-belote-seat.top .g-belote-bubble { position: absolute; left: 100%; top: 30px; margin-left: 6px; }
+@keyframes g-belote-pop { from { transform: scale(.6); opacity: 0; } }
+
+/* pli au centre */
+.g-belote-center { position: absolute; left: 50%; top: 52%; width: 0; height: 0; z-index: 1; }
+.g-belote-played { position: absolute; animation: g-belote-in .22s ease-out; }
+.g-belote-played .pcard { --cw: 52px; }
+.g-belote-played.bottom { left: -26px; top: 6px; }
+.g-belote-played.top { left: -26px; top: -80px; }
+.g-belote-played.left { left: -86px; top: -38px; }
+.g-belote-played.right { left: 34px; top: -38px; }
+.g-belote-played.win .pcard { box-shadow: 0 0 0 3px var(--gold), 0 8px 18px rgba(0,0,0,.35); }
+.g-belote-played.gone:not(.win) { opacity: .75; }
+@keyframes g-belote-in { from { transform: scale(.7) translateY(10px); opacity: 0; } }
+.g-belote-turned { position: absolute; left: -40px; top: -60px; width: 80px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.g-belote-turned .pcard { --cw: 60px; box-shadow: 0 0 0 3px var(--gold), 0 8px 18px rgba(0,0,0,.35); animation: dealIn .3s ease-out; }
+.g-belote-turned small { font-size: 11px; font-weight: 800; white-space: nowrap; text-align: center; }
+.g-belote-auction { position: absolute; left: -60px; top: -34px; width: 120px; height: 60px; border-radius: 18px; background: rgba(0,0,0,.28);
+  display: flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--title); font-size: 26px; }
+.g-belote-auction .g-belote-suit { display: inline-grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: #fff; font-size: 26px; }
+.g-belote-auction small { font-family: var(--font); font-size: 13px; opacity: .85; text-align: center; white-space: nowrap; }
+.g-belote-pli { position: absolute; left: 50%; bottom: 46px; transform: translateX(-50%); font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 99px; background: rgba(0,0,0,.4); z-index: 3; white-space: nowrap; }
+
+/* résumé de donne */
+.g-belote-banner { position: absolute; inset: 50px 22px; z-index: 5; border-radius: 22px; padding: 14px; background: rgba(12,16,40,.88); color: #fff;
+  display: flex; align-items: center; justify-content: center; text-align: center; animation: g-belote-pop .25s ease-out; cursor: pointer; backdrop-filter: blur(4px); }
+.g-belote-banner .h3 { color: var(--gold); margin-bottom: 4px; }
+.g-belote-banner .small { margin: 4px 0; }
+.g-belote-banner .dim { color: #B9B9E0; }
+.g-belote-sumrow { display: grid; grid-template-columns: 52px 1fr auto; gap: 8px; align-items: center; padding: 6px 10px; margin-top: 6px; border-radius: 12px; background: rgba(255,255,255,.08); text-align: left; font-size: 14px; }
+.g-belote-sumrow.us { background: rgba(88,204,2,.2); }
+.g-belote-sumrow b { font-family: var(--title); font-size: 18px; }
+
+/* ---------- commandes d'enchères ---------- */
+.g-belote-ctrl { display: flex; flex-direction: column; gap: 10px; margin: 0 0 8px; padding: 12px; border-radius: 20px; background: var(--card); border: 2px solid var(--line); animation: g-belote-pop .2s ease-out; }
+.g-belote-suits { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.g-belote-suits.four { grid-template-columns: repeat(4, 1fr); }
+.g-belote-suitbtn { min-height: 64px; border-radius: 16px; background: #fff; border: 2px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  box-shadow: 0 4px 0 var(--shade); transition: transform var(--t-fast); color: #1B1B3A; }
+.g-belote-suitbtn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--shade); }
+.g-belote-suitbtn:disabled { opacity: .5; }
+.g-belote-suitbtn .g-belote-suit.big { font-size: 30px; line-height: 1; }
+.g-belote-suitbtn small { font-size: 12px; font-weight: 800; color: #555C86; }
+.g-belote-vals { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.g-belote-val { min-width: 50px; min-height: 44px; font-weight: 800; justify-content: center; }
+.g-belote-val.on { background: var(--gold); color: #1B1B3A; border-color: var(--gold-d); }
+
+/* ---------- main en éventail ---------- */
+.g-belote-hand { display: flex; justify-content: center; align-items: flex-end; padding: 22px 0 6px; min-height: 120px; }
+.g-belote-hc { --i: 0; margin-left: -20px; border-radius: 10px; transform-origin: 50% 120%;
+  transform: rotate(calc(var(--i) * 3.5deg)) translateY(calc(var(--i) * var(--i) * 1.3px)); transition: transform var(--t-fast); }
+.g-belote-hc:first-child { margin-left: 0; }
+.g-belote-hc .pcard { --cw: 58px; }
+.g-belote-hc.ok { transform: rotate(calc(var(--i) * 3.5deg)) translateY(calc(var(--i) * var(--i) * 1.3px - 12px)); }
+.g-belote-hc.ok:hover, .g-belote-hc.ok:focus-visible { transform: rotate(calc(var(--i) * 3.5deg)) translateY(calc(var(--i) * var(--i) * 1.3px - 22px)); z-index: 2; }
+.g-belote-hc .pcard.dim { filter: brightness(.6) saturate(.4); }
+@media (min-width: 600px) {
+  .g-belote-felt { height: 380px; }
+  .g-belote-hc .pcard { --cw: 70px; }
+  .g-belote-played .pcard { --cw: 60px; }
+  .g-belote-played.bottom { left: -30px; } .g-belote-played.top { left: -30px; top: -92px; }
+  .g-belote-played.left { left: -100px; } .g-belote-played.right { left: 40px; }
+}
+@media (max-width: 360px) { .g-belote-hc { margin-left: -24px; } .g-belote-hc .pcard { --cw: 54px; } }

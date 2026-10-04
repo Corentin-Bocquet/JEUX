@@ -1,0 +1,6 @@
+/* Manille : même table que la belote (classes g-belote-*, js/games/lib/belote_table.js) */
+@import url("belote.css");
+
+.g-manille .g-belote-trump { box-shadow: 0 0 0 3px #A3E635, 0 6px 16px rgba(0,0,0,.3); }
+.g-manille .g-belote-trump.none .g-belote-suit.big { font-family: var(--title); font-size: 20px; }
+.g-manille .btn.purple { min-height: 48px; }

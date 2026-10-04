@@ -1,0 +1,65 @@
+/* Président */
+.g-president { display: flex; flex-direction: column; gap: 8px; padding-bottom: 8px; }
+.g-president-seats { display: grid; grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); gap: 6px; }
+.g-president-seat { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 4px 6px; border-radius: 16px;
+  background: var(--card); border: 2px solid var(--line); transition: transform .2s, border-color .2s, box-shadow .2s; min-width: 0; }
+.g-president-seat.turn { border-color: var(--green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 30%, transparent); transform: translateY(-2px); }
+.g-president-seat.done { opacity: .75; }
+.g-president-backs { position: relative; display: flex; justify-content: center; height: 34px; align-items: center; }
+.g-president-backs .pcard { margin-left: -14px; border-width: 2px; }
+.g-president-backs .pcard:first-child { margin-left: 0; }
+.g-president-count { position: absolute; right: -10px; top: -4px; background: var(--blue); color: #fff; border-radius: 99px; font-size: 12px; min-width: 22px; height: 22px;
+  display: grid; place-items: center; padding: 0 5px; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+.g-president-rank { font-family: var(--title); font-size: 22px; color: var(--gold); }
+.g-president-name { font-size: 12.5px; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--txt); }
+.g-president-bubble { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); background: var(--red); color: #fff; font-size: 11px; font-weight: 800;
+  padding: 1px 8px; border-radius: 99px; animation: g-president-pop .25s ease-out; }
+.g-president-role { max-width: 100%; overflow: hidden; display: inline-flex; align-items: center; gap: 2px; font-size: 10.5px; font-weight: 800; padding: 1px 6px; border-radius: 99px; white-space: nowrap; color: #fff; }
+.g-president-role.big { font-size: 13px; padding: 4px 10px; }
+.g-president-r-pres { background: linear-gradient(135deg, #F5B700, #D98E04); color: #3A2600; }
+.g-president-r-vice { background: linear-gradient(135deg, #3B82F6, #1D4ED8); }
+.g-president-r-neutre { background: #64748B; }
+.g-president-r-vperd { background: linear-gradient(135deg, #F97316, #C2410C); }
+.g-president-r-perd { background: linear-gradient(135deg, #7F1D1D, #B91C1C); }
+
+.g-president-felt { min-height: 214px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; overflow: hidden; }
+.g-president-info { position: absolute; top: 10px; left: 0; right: 0; display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; font-size: 11px; z-index: 1; }
+.g-president-info span { background: rgba(0,0,0,.28); padding: 2px 8px; border-radius: 99px; }
+.g-president-center { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 18px; width: 100%; }
+.g-president-stack { position: relative; height: 112px; width: 100%; display: grid; place-items: center; }
+.g-president-play { grid-area: 1 / 1; display: flex; gap: 0; transform: translate(calc(var(--k, 0) * -30px), calc(var(--k, 0) * -4px)) rotate(calc(var(--k, 0) * -7deg)) scale(calc(1 - var(--k, 0) * .07));
+  filter: brightness(calc(1 - var(--k, 0) * .18)); }
+.g-president-play .pcard { --cw: 64px; margin-left: -24px; }
+.g-president-play .pcard:first-child { margin-left: 0; }
+.g-president-play.last .pcard { box-shadow: 0 0 0 2px rgba(255,255,255,.6), 0 10px 22px rgba(0,0,0,.4); }
+.g-president-stack.ghost { opacity: .5; filter: grayscale(.4); }
+.g-president-empty { height: 90px; width: 64px; border: 2px dashed rgba(255,255,255,.35); border-radius: 10px; display: grid; place-items: center; font-size: 11px; opacity: .8; text-align: center; }
+.g-president-cap { text-align: center; font-size: 15px; line-height: 1.3; text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+.g-president-cap b { color: #FFE27A; }
+.g-president-dim { opacity: .8; }
+.g-president-magic { font-family: var(--title); font-size: 22px; color: #FFE27A; animation: g-president-pop .45s cubic-bezier(.2,1.6,.4,1); }
+.g-president-swap { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.g-president-swapicon { font-size: 40px; animation: g-president-spin 2.4s linear infinite; }
+.g-president-big { font-family: var(--title); font-size: 19px; }
+.g-president-banner { position: absolute; inset: 8px; border-radius: 22px; background: rgba(10,14,40,.97); display: flex; flex-direction: column; justify-content: center; gap: 4px;
+  padding: 12px 16px; z-index: 3; animation: g-president-pop .35s ease-out; }
+.g-president-brow { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; font-size: 14px; padding: 3px 6px; border-radius: 10px; }
+.g-president-brow.me { background: rgba(255,255,255,.12); }
+.g-president-brow b { color: #FFE27A; }
+
+.g-president-me { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 26px; }
+.g-president-got { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; font-size: 13px; color: var(--txt); }
+.g-president-got > span { display: inline-flex; gap: 3px; }
+.g-president-hand { position: relative; height: 134px; margin: 4px 0 0; container-type: inline-size; }
+.g-president-hc { position: absolute; bottom: 8px; padding: 0; border: 0; background: none; border-radius: 9px; transform-origin: 50% 120%;
+  transition: transform .18s cubic-bezier(.2,.9,.3,1.2), filter .2s; }
+.g-president-hc .pcard { --cw: 62px; }
+.g-president-hc.sel .pcard { box-shadow: 0 0 0 3px var(--gold), 0 12px 20px rgba(0,0,0,.35); }
+.g-president-hc:disabled { cursor: default; }
+.g-president-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.g-president-actions .btn { min-height: 48px; min-width: 120px; }
+@media (min-width: 600px) { .g-president-hc .pcard { --cw: 72px; } .g-president-hand { height: 150px; } .g-president-play .pcard { --cw: 76px; } }
+
+@keyframes g-president-pop { from { transform: scale(.6); opacity: 0; } }
+@keyframes g-president-spin { to { transform: rotate(360deg); } }
+@keyframes g-president-deal { from { opacity: 0; translate: 0 40px; } }

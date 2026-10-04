@@ -1,0 +1,122 @@
+/* Empire immobilier */
+.g-empire { max-width: 560px; margin: 0 auto; --ge-board: #E7F3EA; --ge-cell: #FBFDF9; --ge-ink: #1B2A22; --ge-line: #9FB8A6; }
+:root[data-theme="dark"] .g-empire, :root:not([data-theme="light"]) .g-empire { --ge-board: #163B2C; --ge-cell: #1F4A38; --ge-ink: #EAF6EE; --ge-line: #2F6B52; }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]):not([data-theme="light"]) .g-empire { --ge-board: #E7F3EA; --ge-cell: #FBFDF9; --ge-ink: #1B2A22; --ge-line: #9FB8A6; } }
+:root[data-theme="light"] .g-empire { --ge-board: #E7F3EA; --ge-cell: #FBFDF9; --ge-ink: #1B2A22; --ge-line: #9FB8A6; }
+
+/* joueurs */
+.g-empire-players { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 6px; margin: 6px 0 8px; }
+.g-empire-pl { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 6px; align-items: center; text-align: left;
+  min-height: 46px; padding: 5px 8px; border-radius: 14px; background: var(--card); border: 2px solid var(--line); color: var(--txt); font: inherit; transition: transform var(--t-fast), border-color var(--t-fast); }
+.g-empire-pl .g-empire-pawn { grid-row: span 2; width: 14px; height: 14px; background: var(--pc); }
+.g-empire-pl span { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-empire-pl b { font-family: var(--title); font-size: 15px; line-height: 1.1; }
+.g-empire-pl.on { border-color: var(--pc); }
+.g-empire-pl.cur { box-shadow: 0 0 0 3px color-mix(in srgb, var(--pc) 45%, transparent); transform: translateY(-1px); }
+.g-empire-pl.out { opacity: .45; text-decoration: line-through; }
+
+/* plateau */
+.g-empire-board { display: grid; grid-template-columns: 1.35fr repeat(9, 1fr) 1.35fr; grid-template-rows: 1.35fr repeat(9, 1fr) 1.35fr; gap: 2px;
+  aspect-ratio: 1; width: 100%; padding: 4px; border-radius: 18px; background: var(--ge-line); box-shadow: 0 10px 26px rgba(0,0,0,.28); color: var(--ge-ink); }
+.g-empire-cell { position: relative; min-width: 0; min-height: 0; padding: 0; border: 0; border-radius: 4px; background: var(--ge-cell); color: var(--ge-ink);
+  display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; font: inherit; }
+.g-empire-cell.s-corner { border-radius: 8px; background: color-mix(in srgb, var(--ge-cell) 80%, #10B981); }
+.g-empire-cell .g-empire-ico { font-size: clamp(10px, 3.4vw, 18px); line-height: 1; }
+.g-empire-cell.s-corner .g-empire-ico { font-size: clamp(14px, 5vw, 26px); }
+.g-empire-band { position: absolute; display: flex; gap: 1px; align-items: center; justify-content: center; }
+.g-empire-cell.s-b .g-empire-band { left: 0; right: 0; top: 0; height: 30%; }
+.g-empire-cell.s-t .g-empire-band { left: 0; right: 0; bottom: 0; height: 30%; }
+.g-empire-cell.s-l .g-empire-band { top: 0; bottom: 0; right: 0; width: 30%; flex-direction: column; }
+.g-empire-cell.s-r .g-empire-band { top: 0; bottom: 0; left: 0; width: 30%; flex-direction: column; }
+.g-empire-house { width: 4px; height: 4px; border-radius: 1px; background: #16A34A; box-shadow: 0 0 0 1px #fff; }
+.g-empire-hotel { width: 8px; height: 5px; border-radius: 1px; background: #DC2626; box-shadow: 0 0 0 1px #fff; }
+.g-empire-owner { position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 2px var(--own); pointer-events: none; }
+.g-empire-cell.mort { background: repeating-linear-gradient(45deg, var(--ge-cell) 0 3px, color-mix(in srgb, var(--ge-cell) 70%, #888) 3px 6px); }
+.g-empire-cell.focus { outline: 2px solid var(--gold); outline-offset: -1px; z-index: 2; }
+.g-empire-cell.here { animation: geHere 1.4s ease-in-out infinite; }
+@keyframes geHere { 50% { background: color-mix(in srgb, var(--ge-cell) 70%, var(--gold)); } }
+.g-empire-pawns { position: absolute; inset: 0; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 1px; pointer-events: none; }
+.g-empire-pawn { display: inline-block; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid #fff; box-shadow: 0 1px 2px rgba(0,0,0,.5); }
+.g-empire-pawn.cur { width: 12px; height: 12px; animation: gePop .35s ease-out; z-index: 1; }
+@keyframes gePop { from { transform: scale(1.8); } }
+
+/* centre : zoom sur la case */
+.g-empire-center { grid-row: 2 / 11; grid-column: 2 / 11; display: flex; flex-direction: column; gap: 4px; padding: 6px; min-height: 0; overflow: hidden;
+  border-radius: 10px; background: var(--ge-board); }
+.g-empire-ctop { display: flex; justify-content: space-between; gap: 4px; }
+.g-empire-ctop .chip { font-size: 11px; padding: 2px 8px; min-height: 0; }
+.g-empire-cbot { display: flex; gap: 6px; align-items: center; justify-content: center; min-height: 0; }
+.g-empire-dice { display: flex; gap: 4px; animation: geRoll .4s ease-out; }
+.g-empire-dice .die { width: 30px; height: 30px; padding: 4px; }
+@keyframes geRoll { from { transform: rotate(-25deg) scale(.7); opacity: .3; } }
+.g-empire-card { flex: 1; font-size: 10.5px; line-height: 1.25; padding: 5px 7px; border-radius: 8px; color: #1B1B1B; background: #FFE7A8; animation: geCard .35s ease-out; }
+.g-empire-card.s { background: #FFD6A0; } .g-empire-card.c { background: #C9E7FF; }
+.g-empire-card b { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+@keyframes geCard { from { transform: rotateY(80deg); } }
+
+/* fiche */
+.g-empire-fiche { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; flex-direction: column; border-radius: 10px; background: #FFFDF7; color: #1B1F2A; box-shadow: 0 3px 10px rgba(0,0,0,.2); animation: geZoom .22s ease-out; }
+@keyframes geZoom { from { transform: scale(.85); opacity: 0; } }
+.g-empire-fiche.mort { filter: grayscale(.6); }
+.g-empire-fhead { display: flex; gap: 6px; align-items: center; padding: 5px 8px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.45); }
+.g-empire-fhead b { font-family: var(--title); font-size: 14px; line-height: 1.1; }
+.g-empire-fbody { padding: 4px 8px; font-size: 11px; overflow: hidden; }
+.g-empire-fline { display: flex; justify-content: space-between; font-size: 12px; }
+.g-empire-fline.gold b { color: #B45309; }
+.g-empire-rents { margin-top: 2px; }
+.g-empire-rents div { display: flex; justify-content: space-between; line-height: 1.32; padding: 0 3px; border-radius: 4px; }
+.g-empire-rents div.on { background: #FDE68A; font-weight: 800; }
+.g-empire-rents div.dim { color: #64748B; }
+.g-empire-tag { display: inline-block; margin: 2px 4px 0 0; padding: 0 6px; border-radius: 6px; font-size: 11px; background: #DCFCE7; color: #166534; font-weight: 700; }
+.g-empire-tag.red { background: #FEE2E2; color: #B91C1C; }
+.g-empire-desc { margin: 4px 0 0; font-size: 12px; }
+.g-empire-fiche.big { max-width: 280px; margin: 6px auto; }
+.g-empire-fiche.big .g-empire-fbody { font-size: 13px; }
+
+/* actions */
+.g-empire-actions { margin: 10px 0 4px; display: flex; flex-direction: column; gap: 8px; }
+.g-empire-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.g-empire-btns .btn { min-height: 48px; flex: 1 1 140px; }
+.g-empire-info { padding: 10px 12px; border-radius: 14px; background: var(--card); border: 2px solid var(--line); text-align: center; font-weight: 700; }
+.g-empire-info.red { border-color: var(--red); }
+.g-empire-bidders { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+.g-empire-stepper { display: flex; gap: 6px; align-items: center; justify-content: center; }
+.g-empire-stepper .btn { min-width: 48px; min-height: 44px; }
+.g-empire-stepper b { min-width: 86px; text-align: center; font-family: var(--title); font-size: 20px; }
+.g-empire-tradebtn { min-height: 44px; }
+.g-empire-trade { padding: 10px; border-radius: 18px; display: flex; flex-direction: column; gap: 8px; }
+.g-empire-tr-head { flex-wrap: wrap; align-items: center; }
+.g-empire-tr-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; max-height: 210px; overflow: auto; }
+.g-empire-mini { display: grid; grid-template-columns: 6px 1fr; grid-template-rows: auto auto; column-gap: 6px; text-align: left; min-height: 44px; padding: 4px 6px;
+  border-radius: 10px; background: var(--card); border: 2px solid var(--line); color: var(--txt); font: inherit; }
+.g-empire-mini i { grid-row: span 2; border-radius: 3px; background: var(--gc); }
+.g-empire-mini span { font-size: 12px; font-weight: 700; line-height: 1.15; }
+.g-empire-mini small { font-size: 11px; color: var(--dim); }
+.g-empire-mini.on { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 18%, var(--card)); }
+
+/* titres possédés */
+.g-empire-sec { margin-top: 12px; }
+.g-empire-sec .h3 { margin: 0 0 6px; }
+.g-empire-titles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.g-empire-title { border-radius: 14px; overflow: hidden; background: var(--card); border: 2px solid var(--line); border-top: 8px solid var(--gc); display: flex; flex-direction: column; }
+.g-empire-title.full { box-shadow: 0 0 0 2px color-mix(in srgb, var(--gc) 60%, transparent); }
+.g-empire-title.mort { opacity: .7; border-style: dashed; border-top-style: solid; }
+.g-empire-tname { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 6px 8px; min-height: 44px; background: none; border: 0; color: var(--txt); font: inherit; text-align: left; }
+.g-empire-tname b { font-size: 13px; line-height: 1.15; }
+.g-empire-tname small { font-size: 11px; color: var(--dim); }
+.g-empire-tbtns { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 6px 6px; }
+.g-empire-tbtns .btn { flex: 1 1 auto; min-height: 40px; padding: 4px 6px; font-size: 12px; }
+
+/* journal */
+.g-empire-log { margin-top: 12px; padding: 8px 10px; border-radius: 14px; background: var(--card); border: 2px solid var(--line); font-size: 13px; line-height: 1.45; }
+.g-empire-log .dim { color: var(--dim); }
+.g-empire-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+
+@media (min-width: 600px) {
+  .g-empire-center { padding: 10px; gap: 8px; }
+  .g-empire-fbody { font-size: 13px; }
+  .g-empire-fhead b { font-size: 17px; }
+  .g-empire-card { font-size: 12px; }
+  .g-empire-dice .die { width: 38px; height: 38px; }
+  .g-empire-pawn { width: 12px; height: 12px; }
+}
