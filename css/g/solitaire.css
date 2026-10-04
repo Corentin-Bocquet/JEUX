@@ -1,0 +1,43 @@
+.g-solitaire { user-select: none; -webkit-user-select: none; }
+.g-solitaire-strip { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 8px; scrollbar-width: none; }
+.g-solitaire-pl { flex: 1 0 96px; max-width: 150px; padding: 6px 8px; border-radius: 14px; background: var(--card); border: 2px solid var(--line); }
+.g-solitaire-pl.me { border-color: var(--green); }
+.g-solitaire-pl.st-won { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 18%, var(--card)); }
+.g-solitaire-pl.st-stuck, .g-solitaire-pl.st-out { opacity: .65; }
+.g-solitaire-plname { font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-solitaire-prog { height: 8px; border-radius: 4px; background: color-mix(in srgb, var(--txt) 14%, transparent); overflow: hidden; margin: 4px 0 2px; }
+.g-solitaire-prog i { display: block; height: 100%; background: linear-gradient(90deg, var(--green), var(--gold)); border-radius: 4px; transition: width .4s ease; }
+.g-solitaire-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.g-solitaire-head .turnmsg { margin: 4px 0 8px; font-size: 15px; text-align: left; flex: 1; }
+.g-solitaire-clock { font-family: var(--title); font-size: 18px; padding: 4px 10px; border-radius: 12px; background: var(--card); border: 2px solid var(--line); white-space: nowrap; }
+.g-solitaire-clock.hurry { color: var(--red); border-color: var(--red); animation: gSolPulse 1s infinite; }
+@keyframes gSolPulse { 50% { transform: scale(1.06); } }
+.g-solitaire-felt { padding: 10px; border-radius: 22px; }
+.g-solitaire-felt .pcard, .g-solitaire-ghost .pcard { --cw: inherit; }
+.g-solitaire-top { display: flex; align-items: flex-start; gap: 5px; margin-bottom: 12px; position: relative; }
+.g-solitaire-slot { position: relative; border-radius: 8px; flex: none; }
+.g-solitaire-stock:not(:disabled) .pcard.back { box-shadow: 0 0 0 2px var(--gold), 0 4px 10px rgba(0,0,0,.3); }
+.g-solitaire-cnt { position: absolute; right: -4px; top: -6px; background: var(--red); color: #fff; font-size: 11px; min-width: 20px; height: 20px; border-radius: 10px; display: grid; place-items: center; padding: 0 4px; }
+.g-solitaire-re, .g-solitaire-fs, .g-solitaire-kslot { display: grid; place-items: center; color: rgba(255,255,255,.6); font-size: calc(var(--cw) * .45); font-family: var(--title); }
+.g-solitaire-fs.red { color: rgba(255,140,140,.75); }
+.g-solitaire-kslot { font-size: calc(var(--cw) * .35); }
+.g-solitaire-waste { position: relative; width: calc(var(--cw) * 1.7); height: calc(var(--cw) * 1.42); flex: none; }
+.g-solitaire-wc { position: absolute; top: 0; }
+.g-solitaire-wc:last-child .pcard { animation: gSolFlip .22s ease-out; }
+@keyframes gSolFlip { from { transform: translateX(-14px) rotateY(60deg); opacity: .4; } }
+.g-solitaire-cols { display: grid; grid-template-columns: repeat(7, var(--cw)); justify-content: space-between; gap: 5px; min-height: calc(var(--cw) * 3.2); }
+.g-solitaire-col { position: relative; min-height: calc(var(--cw) * 1.42); }
+.g-solitaire-cc { position: absolute; left: 0; }
+.g-solitaire-grab { cursor: grab; touch-action: none; }
+.g-solitaire-grab:active .pcard { filter: brightness(1.05); }
+.g-solitaire-felt .pcard .tl { font-size: calc(var(--cw) * .34); left: 6%; top: 3%; }
+.g-solitaire-felt .pcard .mid { font-size: calc(var(--cw) * .5); top: 22%; }
+.g-solitaire-felt .pcard .br { display: none; }
+.g-solitaire-ghost { position: fixed; z-index: 1000; pointer-events: none; width: var(--cw); filter: drop-shadow(0 12px 18px rgba(0,0,0,.45)); }
+.g-solitaire-ghost .pcard .tl { font-size: calc(var(--cw) * .34); left: 6%; top: 3%; }
+.g-solitaire-ghost .pcard .mid { font-size: calc(var(--cw) * .5); top: 22%; }
+.g-solitaire-ghost .pcard .br { display: none; }
+.g-solitaire-gc { position: absolute; left: 0; }
+.g-solitaire-bar { display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+.g-solitaire-bar .btn { min-height: 44px; }
+.g-solitaire-help { flex-basis: 100%; text-align: center; }
