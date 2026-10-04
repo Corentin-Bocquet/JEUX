@@ -90,7 +90,7 @@ export const GAMES = [
 export const CATS = ["Tous", "Cartes", "Plateau", "Mots", "Quiz", "Soirée", "Arcade", "Adresse", "Casino", "Réflexion"];
 export const gameInfo = (id) => GAMES.find((g) => g.id === id);
 // nouveaux jeux visibles dans l'app une fois intégrés et vérifiés (les autres restent cachés)
-export const PUBLISHED = new Set(["morpion", "reversi", "echecs", "backgammon", "serpents", "oie", "dominos", "empire", "belote", "derniere", "president", "menteur", "nainjaune", "manille", "pouilleux", "taureaux", "nombre", "vraifaux", "intrus", "geo", "pfc"]);
+export const PUBLISHED = new Set(["morpion", "reversi", "echecs", "backgammon", "serpents", "oie", "dominos", "empire", "belote", "derniere", "president", "menteur", "nainjaune", "manille", "pouilleux", "taureaux", "nombre", "vraifaux", "intrus", "geo", "pfc", "petitschevaux"]);
 export const isVisible = (g) => !g.css || PUBLISHED.has(g.id);
 export const VISIBLE = GAMES.filter(isVisible);
 

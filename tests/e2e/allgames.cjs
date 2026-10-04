@@ -18,7 +18,7 @@ const GAMES = (process.argv[3] || "puissance4,yams,huit,blackjack,poker,bataille
   await p.waitForSelector(".gcard");
   for (const g of GAMES) {
     const t0 = Date.now();
-    await p.evaluate((g) => { sessionStorage.setItem("jeux.solo", JSON.stringify({ id: g, settings: { level: 2, turnTime: 0, rounds: 2, hands: 6, frames: 5, len: 5, words: 12, size: 10 }, bots: ["puissance4","dames","bataille"].includes(g) ? 1 : 2 })); location.hash = "/solo/" + g; }, g);
+    await p.evaluate((g) => { sessionStorage.setItem("jeux.solo", JSON.stringify({ id: g, settings: { level: 2, turnTime: 0, rounds: 2, hands: 6, frames: 5, len: 5, words: 12, size: 10, horses: 2 }, bots: ["puissance4","dames","bataille"].includes(g) ? 1 : 2 })); location.hash = "/solo/" + g; }, g);
     // première partie : la fenêtre des règles doit apparaître et lancer la partie une fois fermée
     await p.waitForSelector("text=J'ai compris, on joue !", { timeout: 8000 });
     await p.click("text=J'ai compris, on joue !");

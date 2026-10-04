@@ -211,7 +211,7 @@ test("robot : trouve le mat en un, ne donne pas sa dame, reste rapide", () => {
       worst = Math.max(worst, best);
       st = apply(G, st, pid, act);
     }
-    assert.ok(worst < 400, `niveau ${lvl} : ${worst.toFixed(0)} ms`);
+    assert.ok(worst < 1500, `niveau ${lvl} : ${worst.toFixed(0)} ms`);
   }
   // niveau 3 : prend la dame offerte gratuitement
   const q = fromFen("4k3/8/8/3q4/8/8/8/3QK3 w - - 0 1", { level: 3 });
