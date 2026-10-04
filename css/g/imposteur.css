@@ -1,0 +1,24 @@
+@import url("roles.css");
+.g-imposteur { max-width: 560px; margin: 0 auto; padding-bottom: 20px; }
+.g-imposteur-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 2px 4px 4px; }
+.g-imposteur-ph { font-family: var(--title); font-size: 19px; }
+.g-imposteur .g-rl-banner.me { border-color: var(--green); background: color-mix(in srgb, var(--green) 18%, var(--card)); }
+.g-imposteur-news { display: flex; flex-direction: column; gap: 6px; margin: 6px 0; }
+.g-imposteur-news div { padding: 10px 12px; border-radius: 16px; background: color-mix(in srgb, var(--purple) 16%, var(--card)); border: 2px solid color-mix(in srgb, var(--purple) 40%, var(--line)); font-size: 14px; animation: g-rl-in .3s ease-out; }
+.g-imposteur-ghost { text-align: center; padding: 8px; border-radius: 14px; background: var(--card2); color: var(--dim); font-size: 13.5px; }
+.g-imposteur .big { min-height: 56px; font-size: 17px; }
+.g-imposteur .btn.block { margin: 6px 0; }
+.g-imposteur-entry { margin: 10px 0; padding: 12px; border-radius: 20px; background: color-mix(in srgb, var(--green) 14%, var(--card)); border: 2px solid var(--green); display: flex; flex-direction: column; gap: 8px; animation: g-rl-in .25s ease-out; }
+.g-imposteur-etitle { font-family: var(--title); font-size: 16px; }
+.g-imposteur-erow { display: flex; gap: 8px; }
+.g-imposteur-erow .input { flex: 1; min-width: 0; }
+.g-imposteur-board { display: flex; flex-direction: column; gap: 6px; }
+.g-imposteur-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 16px; background: var(--card); border: 2px solid var(--line); transition: border-color var(--t-fast); }
+.g-imposteur-line.cur { border-color: var(--gold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 35%, transparent); }
+.g-imposteur-line.out { opacity: .6; }
+.g-imposteur-line b { font-size: 14px; min-width: 70px; }
+.g-imposteur-clues { display: flex; flex-wrap: wrap; gap: 5px; }
+.g-imposteur-clues i { font-style: normal; font-weight: 800; font-size: 13.5px; padding: 3px 10px; border-radius: 99px; background: color-mix(in srgb, var(--purple) 26%, var(--card2)); animation: g-rl-in .25s ease-out; }
+.g-imposteur-clues i.pass { opacity: .6; }
+.g-imposteur-role { font-size: 11.5px; padding: 2px 8px; border-radius: 99px; color: #fff; background: #15803D; }
+.g-imposteur-role.imposteur { background: #B91C1C; } .g-imposteur-role.blanc { background: #475569; }

@@ -1,0 +1,10 @@
+@import url("roles.css");
+.g-loupgarou { max-width: 560px; margin: 0 auto; padding-bottom: 20px; transition: background .6s; border-radius: 26px; }
+.g-loupgarou.night { background: radial-gradient(ellipse at 50% 0%, rgba(80, 90, 200, .22), transparent 70%); }
+.g-loupgarou-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 2px 4px 4px; }
+.g-loupgarou-ph { font-family: var(--title); font-size: 19px; }
+.g-loupgarou-news { display: flex; flex-direction: column; gap: 6px; margin: 6px 0; }
+.g-loupgarou-news div { padding: 10px 12px; border-radius: 16px; background: color-mix(in srgb, var(--red) 16%, var(--card)); border: 2px solid color-mix(in srgb, var(--red) 40%, var(--line)); font-size: 14px; animation: g-rl-in .3s ease-out; }
+.g-loupgarou-ghost { text-align: center; padding: 8px; border-radius: 14px; background: var(--card2); color: var(--dim); font-size: 13.5px; }
+.g-loupgarou .big { min-height: 56px; font-size: 17px; }
+.g-loupgarou .btn.block { margin: 6px 0; }

@@ -1,0 +1,28 @@
+.g-emojifilm { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+.g-emojifilm-head { display: flex; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
+.g-emojifilm-card { border-radius: 28px; padding: 22px 14px; text-align: center; color: #fff;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.22), transparent 60%), linear-gradient(160deg, #EF4444, #9F1239);
+  box-shadow: 0 6px 0 #7F1D1D, 0 16px 30px rgba(0,0,0,.3); animation: g-emojifilm-pop .35s ease-out; }
+.g-emojifilm-card.reveal { background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.22), transparent 60%), linear-gradient(160deg, #F59E0B, #B45309); box-shadow: 0 6px 0 #78350F, 0 16px 30px rgba(0,0,0,.3); }
+.g-emojifilm-emo { font-size: clamp(44px, 13vw, 60px); line-height: 1.15; letter-spacing: 4px; word-break: break-all; }
+.g-emojifilm-title { font-family: var(--title); font-size: 22px; line-height: 1.15; margin-top: 10px; animation: g-emojifilm-pop .35s ease-out; }
+.g-emojifilm-title small { display: block; font-family: var(--font); font-size: 13px; opacity: .9; margin-top: 4px; }
+@keyframes g-emojifilm-pop { from { transform: scale(.85); opacity: 0; } }
+.g-emojifilm-hints { display: flex; flex-direction: column; gap: 6px; }
+.g-emojifilm-hint { padding: 8px 12px; border-radius: 14px; font-weight: 700; font-size: 14px; background: color-mix(in srgb, var(--gold) 22%, var(--card)); border: 2px solid color-mix(in srgb, var(--gold) 50%, transparent); animation: g-emojifilm-pop .25s ease-out; }
+.g-emojifilm-zone { display: flex; flex-direction: column; gap: 8px; }
+.g-emojifilm-zone .turnmsg { margin: 2px 0 0; }
+.g-emojifilm-form { display: flex; gap: 8px; }
+.g-emojifilm-form .input { flex: 1; min-width: 0; }
+.g-emojifilm-tries { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.g-emojifilm-tries s { padding: 3px 10px; border-radius: 99px; background: color-mix(in srgb, var(--red) 18%, var(--card)); color: var(--txt); font-size: 13px; }
+.g-emojifilm-qcm { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.g-emojifilm-choice { min-height: 64px; padding: 8px 10px; border-radius: 18px; background: var(--card); border: 2px solid var(--line); box-shadow: 0 4px 0 var(--line);
+  color: var(--txt); font-weight: 800; font-size: 14.5px; line-height: 1.2; transition: transform var(--t-fast); }
+.g-emojifilm-choice:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
+.g-emojifilm-tools { flex-wrap: wrap; }
+.g-emojifilm-others { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+.g-emojifilm-pl { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 99px; background: var(--card); border: 2px solid var(--line); font-size: 13.5px; }
+.g-emojifilm-pl.me { border-color: var(--blue); }
+.g-emojifilm-pl.found { background: color-mix(in srgb, var(--green) 20%, var(--card)); }
+.g-emojifilm-pl i { font-style: normal; font-size: 11px; color: var(--dim); }

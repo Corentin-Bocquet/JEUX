@@ -1,0 +1,39 @@
+.g-bonprix { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+.g-bonprix-head { display: flex; justify-content: space-between; gap: 6px; flex-wrap: wrap; }
+.g-bonprix-card { position: relative; border-radius: 28px; padding: 16px 16px 18px; text-align: center; color: #fff;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.25), transparent 60%), linear-gradient(160deg, #FB923C, #C2410C);
+  box-shadow: 0 6px 0 #7C2D12, 0 16px 30px rgba(0,0,0,.3); animation: g-bonprix-in .35s ease-out; }
+@keyframes g-bonprix-in { from { transform: translateY(14px) scale(.94); opacity: 0; } }
+.g-bonprix-emo { font-size: 64px; line-height: 1.1; filter: drop-shadow(0 6px 8px rgba(0,0,0,.25)); }
+.g-bonprix-name { font-family: var(--title); font-size: 23px; line-height: 1.15; margin-top: 4px; }
+.g-bonprix-desc { font-size: 14px; opacity: .92; margin-top: 4px; }
+.g-bonprix-tag { display: inline-block; margin-top: 8px; padding: 2px 10px; border-radius: 99px; font-size: 11.5px; font-weight: 800; background: rgba(0,0,0,.22); }
+.g-bonprix-price { margin: 10px auto 0; display: inline-block; padding: 6px 18px; border-radius: 16px; background: #FFF7D6; color: #7C2D12;
+  font-family: var(--title); font-size: 32px; box-shadow: 0 4px 0 #D6A500; animation: g-bonprix-stamp .45s cubic-bezier(.3,1.6,.6,1); }
+@keyframes g-bonprix-stamp { from { transform: scale(2.2) rotate(-8deg); opacity: 0; } }
+.g-bonprix-zone { display: flex; flex-direction: column; gap: 8px; }
+.g-bonprix-zone .turnmsg { margin: 2px 0 0; }
+.g-bonprix-screen { text-align: center; font-family: var(--title); font-size: 38px; line-height: 1.2; padding: 8px; border-radius: 18px;
+  background: var(--card); border: 2px solid var(--line); color: var(--txt); }
+.g-bonprix-screen.empty { color: var(--dim2); }
+.g-bonprix-padwrap { display: flex; flex-direction: column; gap: 8px; }
+.g-bonprix-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.g-bonprix-key { min-height: 52px; border-radius: 16px; background: var(--card); border: 2px solid var(--line); box-shadow: 0 4px 0 var(--line);
+  color: var(--txt); font-family: var(--title); font-size: 24px; transition: transform var(--t-fast); }
+.g-bonprix-key:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
+.g-bonprix-key.del { color: var(--red); }
+.g-bonprix-tries { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.g-bonprix-try { padding: 4px 10px; border-radius: 99px; font-weight: 800; font-size: 13px; background: var(--card); border: 2px solid var(--line); animation: g-bonprix-in .25s ease-out; }
+.g-bonprix-try.up { border-color: var(--blue); } .g-bonprix-try.down { border-color: var(--orange); } .g-bonprix-try.ok { border-color: var(--green); }
+.g-bonprix-others { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.g-bonprix-pl { padding: 5px 11px; border-radius: 99px; background: var(--card); border: 2px solid var(--line); font-size: 13px; }
+.g-bonprix-pl.done, .g-bonprix-pl.found { background: color-mix(in srgb, var(--green) 18%, var(--card)); }
+.g-bonprix-list { display: flex; flex-direction: column; gap: 6px; }
+.g-bonprix-row { display: grid; grid-template-columns: 1fr auto auto 44px; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 16px;
+  background: var(--card); border: 2px solid var(--line); animation: g-bonprix-in .3s ease-out both; }
+.g-bonprix-row.me { border-color: var(--blue); }
+.g-bonprix-row.win { background: color-mix(in srgb, var(--gold) 22%, var(--card)); border-color: var(--gold); }
+.g-bonprix-who { font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-bonprix-row b { font-family: var(--title); font-size: 17px; }
+.g-bonprix-row small { color: var(--dim); font-size: 12px; min-width: 56px; text-align: right; }
+.g-bonprix-row i { font-style: normal; font-weight: 800; color: var(--green); text-align: right; }

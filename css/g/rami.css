@@ -1,0 +1,45 @@
+.g-rami-opps { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 8px; }
+.g-rami-opp { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 10px; border-radius: 16px; background: var(--card); border: 2px solid var(--line); transition: border-color .2s, background .2s; }
+.g-rami-opp.turn { border-color: var(--green); background: color-mix(in srgb, var(--green) 18%, var(--card)); }
+.g-rami-opp .fan .pcard { margin-left: -14px; }
+.g-rami-opp .fan .pcard:first-child { margin-left: 0; }
+.g-rami-tag { color: var(--green); font-weight: 700; }
+.g-rami-felt { padding: 12px 10px; }
+.g-rami-melds { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: 56px; max-height: 236px; overflow-y: auto; margin-bottom: 10px; position: relative; }
+.g-rami-empty { align-self: center; color: rgba(255,255,255,.8); }
+.g-rami-meld { display: flex; align-items: center; gap: 4px; padding: 4px 6px; border-radius: 12px; background: rgba(0,0,0,.18); border: 2px solid transparent; min-height: 50px; transition: transform .15s, border-color .15s; }
+.g-rami-meld.mine { background: rgba(255,255,255,.12); }
+.g-rami-meld.ok { border-color: var(--gold); animation: gRamiGlow 1.4s infinite; }
+.g-rami-meld:active { transform: scale(.97); }
+@keyframes gRamiGlow { 50% { box-shadow: 0 0 0 4px rgba(255,200,0,.3); } }
+.g-rami-mcards { display: flex; }
+.g-rami-mcards .pcard { --cw: 30px; margin-left: -12px; }
+.g-rami-mcards .pcard:first-child { margin-left: 0; }
+.g-rami-mcards .pcard .mid { font-size: 13px; top: 30%; }
+.g-rami-mcards .pcard .br { display: none; }
+.g-rami-mpts { font-size: 11px; color: #fff; opacity: .85; min-width: 18px; }
+.g-rami-piles { gap: 16px; }
+.g-rami-disc { border-radius: 10px; }
+.g-rami-disc .pcard { --cw: 54px; animation: dealIn .3s ease-out; }
+.g-rami-disc.ok .pcard { box-shadow: 0 0 0 3px var(--gold), 0 8px 16px rgba(0,0,0,.3); }
+.g-rami-info { text-align: center; color: #fff; background: rgba(0,0,0,.2); padding: 8px 10px; border-radius: 14px; line-height: 1.3; }
+.g-rami-pending { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; padding: 8px; margin-bottom: 8px; border-radius: 16px; border: 2px dashed var(--gold); background: color-mix(in srgb, var(--gold) 12%, transparent); }
+.g-rami-pgroups { display: flex; gap: 8px; flex-wrap: wrap; }
+.g-rami-bar { display: flex; gap: 6px; justify-content: center; margin-bottom: 4px; }
+.g-rami-bar .btn { min-height: 44px; padding-left: 10px; padding-right: 10px; flex: 1 1 0; max-width: 150px; white-space: nowrap; }
+.g-rami-hand { display: flex; justify-content: center; padding: 22px 4px 8px; min-height: 110px; }
+.g-rami-hand { overflow: hidden; }
+.g-rami-hc { flex: 1 1 0; min-width: 0; max-width: 40px; height: calc(52px * 1.42); display: block; text-align: left; border-radius: 8px; transition: transform .15s; position: relative; }
+.g-rami-hc:last-child { flex: none; width: 52px; max-width: none; }
+.g-rami-hc .pcard { --cw: 52px; }
+.g-rami-hc.sel { transform: translateY(-18px); z-index: 2; }
+.g-rami-hc.sel .pcard { box-shadow: 0 0 0 3px var(--gold), 0 8px 16px rgba(0,0,0,.35); }
+.g-rami-jk { background: linear-gradient(160deg, #fff, #FDE7F3); color: #7C3AED; }
+.g-rami-jk .mid { font-size: calc(var(--cw) * .6); color: #DB2777; }
+.g-rami-jk .tl { font-size: calc(var(--cw) * .26); }
+@media (min-width: 600px) {
+  .g-rami-hc .pcard { --cw: 60px; }
+  .g-rami-hc { max-width: 44px; height: calc(60px * 1.42); }
+  .g-rami-hc:last-child { width: 60px; }
+  .g-rami-mcards .pcard { --cw: 36px; }
+}
