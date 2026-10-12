@@ -1,0 +1,33 @@
+.g-devinequi { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+.g-devinequi-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.g-devinequi-secret { display: flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border-radius: 18px; background: var(--card); border: 2px solid var(--blue); box-shadow: 0 4px 0 var(--blue-d); }
+.g-devinequi-secret small { display: block; font-size: 11px; color: var(--dim); font-weight: 700; }
+.g-devinequi-secret b { font-family: var(--title); font-size: 18px; }
+.g-devinequi-mini { width: 48px; height: 48px; border-radius: 12px; overflow: hidden; flex: none; }
+.g-devinequi-mini svg, .g-devinequi-face svg { width: 100%; height: 100%; display: block; }
+.g-devinequi-vs { display: flex; flex-direction: column; align-items: flex-end; font-size: 13px; gap: 1px; }
+.g-devinequi-vs small { color: var(--dim); font-weight: 700; }
+.g-devinequi .turnmsg { margin: 2px 0; font-size: 16px; }
+.g-devinequi-grid { display: grid; grid-template-columns: repeat(var(--cols), 1fr); gap: 5px; padding: 8px; border-radius: 20px;
+  background: linear-gradient(180deg, #3B82F6, #1D4ED8); box-shadow: 0 5px 0 #1E3A8A, 0 12px 24px rgba(0,0,0,.25); }
+.g-devinequi-tile { display: flex; flex-direction: column; align-items: stretch; border-radius: 10px; background: #fff; padding: 2px; color: #1B1F3B;
+  transition: transform .3s ease, filter .3s ease, opacity .3s ease; transform-origin: 50% 100%; min-height: 44px; }
+.g-devinequi-tile:disabled { cursor: default; }
+.g-devinequi-face { aspect-ratio: 1; border-radius: 8px; overflow: hidden; display: block; }
+.g-devinequi-name { font-size: 10.5px; font-weight: 800; text-align: center; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-devinequi-tile.down { transform: perspective(300px) rotateX(58deg) scale(.92); filter: grayscale(1) brightness(.6); opacity: .55; }
+.g-devinequi-tile.win { box-shadow: 0 0 0 3px var(--gold), 0 0 16px var(--gold); animation: g-devinequi-pulse .8s ease-in-out infinite alternate; }
+@keyframes g-devinequi-pulse { to { transform: scale(1.08); } }
+.g-devinequi-grid.guessing .g-devinequi-tile:not(.down) { box-shadow: 0 0 0 2px var(--gold); animation: g-devinequi-wig 1.2s ease-in-out infinite; }
+@keyframes g-devinequi-wig { 50% { transform: translateY(-2px); } }
+.g-devinequi-tile:not(:disabled):active { transform: scale(.94); }
+.g-devinequi-actions { display: flex; flex-direction: column; gap: 8px; }
+.g-devinequi-qs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.g-devinequi-q { min-height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 4px; border-radius: 14px;
+  background: var(--card); border: 2px solid var(--line); box-shadow: 0 3px 0 var(--line); color: var(--txt); font-size: 12px; font-weight: 800; line-height: 1.15; }
+.g-devinequi-q span { font-size: 17px; }
+.g-devinequi-q:active { transform: translateY(2px); box-shadow: none; }
+.g-devinequi-log { display: flex; flex-direction: column; gap: 3px; font-size: 13px; padding: 8px 12px; border-radius: 14px; background: var(--card); border: 2px solid var(--line); }
+.g-devinequi-log div { color: var(--dim); } .g-devinequi-log div:first-child { color: var(--txt); font-weight: 800; }
+.g-devinequi-log .mine { color: var(--blue); }
+@media (min-width: 600px) { .g-devinequi-name { font-size: 12px; } .g-devinequi-q { font-size: 13px; } }

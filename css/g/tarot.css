@@ -1,0 +1,77 @@
+/* Tarot */
+.g-tarot { display: flex; flex-direction: column; gap: 8px; }
+.g-tarot-info { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.g-tarot-info .chip { font-weight: 700; }
+.g-tarot-contract { background: color-mix(in srgb, var(--purple) 25%, transparent); }
+.g-tarot-red { color: #E0312F; }
+.g-tarot-seats { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+.g-tarot-seat { display: flex; flex-direction: column; align-items: center; min-width: 78px; padding: 6px 8px; border-radius: 14px;
+  background: var(--card); border: 2px solid var(--line); line-height: 1.2; transition: background .2s, border-color .2s; }
+.g-tarot-seat b { font-size: 14px; max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-tarot-seat.turn { border-color: var(--green); background: color-mix(in srgb, var(--green) 18%, var(--card)); }
+.g-tarot-seat.taker b { color: var(--purple); }
+.g-tarot-tag { margin-top: 2px; font-size: 11px; font-weight: 800; padding: 1px 8px; border-radius: 99px; background: var(--purple); color: #fff; }
+
+.g-tarot-felt { min-height: 168px; display: flex; flex-direction: column; justify-content: center; }
+.g-tarot-mid { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.g-tarot-row { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+.g-tarot-trick { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+.g-tarot-trick.done { opacity: .75; }
+.g-tarot-played { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; }
+.g-tarot-trick:not(.done) .g-tarot-played:last-child { animation: g-tarot-in .25s ease-out; }
+.g-tarot-played span { max-width: 62px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-tarot-played.win .g-tarot-c { box-shadow: 0 0 0 3px var(--gold), 0 6px 14px rgba(0,0,0,.35); }
+@keyframes g-tarot-in { from { transform: translateY(16px) scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
+.g-tarot-bids { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 6px; width: 100%; }
+.g-tarot-bid { display: flex; flex-direction: column; align-items: center; padding: 6px; border-radius: 12px; background: rgba(0,0,0,.22); font-size: 13px; }
+.g-tarot-bid b { font-size: 15px; }
+.g-tarot-bid.up b { color: #FFE680; }
+.g-tarot-banner { text-align: center; display: flex; flex-direction: column; gap: 4px; animation: g-tarot-in .3s ease-out; }
+.g-tarot-res { font-family: var(--title); font-size: 20px; }
+.g-tarot-res.ok { color: #9BF0B5; } .g-tarot-res.ko { color: #FFB4B4; }
+.g-tarot-deltas { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 4px; }
+.g-tarot-deltas span { padding: 3px 9px; border-radius: 99px; background: rgba(0,0,0,.25); font-weight: 700; font-size: 13px; }
+.g-tarot-deltas .up { color: #9BF0B5; } .g-tarot-deltas .down { color: #FFB4B4; }
+
+.g-tarot-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.g-tarot-actions .btn { min-height: 52px; font-size: 16px; }
+.g-tarot-actions .btn:first-child { grid-column: 1 / -1; }
+.g-tarot-actions.one { grid-template-columns: 1fr; }
+.g-tarot-actions.four { grid-template-columns: repeat(4, 1fr); justify-items: center; }
+.g-tarot-actions.four .btn:first-child { grid-column: auto; }
+.g-tarot-actions.poign { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; }
+.g-tarot-actions.poign .chip { min-height: 40px; }
+.g-tarot-actions .chip.on { background: var(--gold); color: #222; }
+.g-tarot-pick { border-radius: 10px; }
+.g-tarot-pick .g-tarot-c { --cw: 62px; }
+
+/* la main : cartes chevauchées sur plusieurs rangs */
+.g-tarot-hand { display: flex; flex-wrap: wrap; justify-content: center; padding: 6px 0 4px 16px; row-gap: 6px; }
+.g-tarot-h { margin-left: -14px; border-radius: 8px; transition: transform .12s; }
+.g-tarot-h:not(:disabled):active { transform: translateY(-8px); }
+.g-tarot-h:not(:disabled):hover { transform: translateY(-6px); }
+.g-tarot-hand.big .g-tarot-h { margin-left: -18px; }
+
+/* la carte */
+.g-tarot-c { --cw: 48px; position: relative; width: var(--cw); height: calc(var(--cw) * 1.5); border-radius: calc(var(--cw) * .14);
+  background: linear-gradient(180deg, #fff, #EEF0F7); color: #1B1E2B; box-shadow: 0 1px 0 rgba(0,0,0,.2), 0 3px 8px rgba(0,0,0,.25);
+  border: 1px solid rgba(0,0,0,.12); overflow: hidden; font-weight: 800; flex: none; }
+.g-tarot-c.sm { --cw: 38px; }
+.g-tarot-c.red { color: #D92B2B; }
+.g-tarot-c .tl { position: absolute; left: 4px; top: 3px; display: flex; flex-direction: column; align-items: center; line-height: .95; font-size: calc(var(--cw) * .3); }
+.g-tarot-c .tl i { font-style: normal; font-size: .85em; }
+.g-tarot-c .mid { position: absolute; inset: 22% 0 0 18%; display: grid; place-items: center; font-size: calc(var(--cw) * .5); line-height: 1; }
+.g-tarot-c.fig .mid { display: flex; flex-direction: column; justify-content: center; align-items: center; font-size: calc(var(--cw) * .32); }
+.g-tarot-c.fig .mid b { font-size: 1.5em; font-family: var(--title); }
+.g-tarot-c.fig { background: linear-gradient(180deg, #FFF8E6, #F6E7BF); }
+.g-tarot-c.atout { background: linear-gradient(160deg, #EDE4FF, #C9B5FF); color: #3B1F8F; }
+.g-tarot-c.atout .big { position: absolute; left: 4px; top: 2px; font-family: var(--title); font-size: calc(var(--cw) * .5); line-height: 1; }
+.g-tarot-c.atout .tl { display: none; }
+.g-tarot-c .lab { position: absolute; left: 0; right: 0; bottom: 3px; text-align: center; font-size: calc(var(--cw) * .17); font-weight: 700; text-transform: uppercase; opacity: .8; }
+.g-tarot-c.bout { background: linear-gradient(160deg, #FFE9A8, #F2B632); color: #5A3A00; border: 2px solid #B97F00; }
+.g-tarot-c.exc { background: radial-gradient(circle at 50% 40%, #D7FFF4, #4FD1B5); color: #0B4B3E; border: 2px solid #138A70; }
+.g-tarot-c.exc .star { position: absolute; inset: 0 0 12% 0; display: grid; place-items: center; font-size: calc(var(--cw) * .62); }
+.g-tarot-c.ok { box-shadow: 0 0 0 3px var(--gold), 0 6px 12px rgba(0,0,0,.3); }
+.g-tarot-c.dim { filter: brightness(.68) saturate(.6); }
+.g-tarot-c.sel { transform: translateY(-10px); box-shadow: 0 0 0 3px var(--red), 0 6px 12px rgba(0,0,0,.3); }
+@media (min-width: 600px) { .g-tarot-c { --cw: 58px; } .g-tarot-h { margin-left: -16px; } }

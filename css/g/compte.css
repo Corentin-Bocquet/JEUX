@@ -1,0 +1,46 @@
+.g-compte { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 8px; }
+.g-compte-head { display: flex; gap: 12px; align-items: stretch; }
+.g-compte-target { flex: 1; border-radius: 22px; padding: 8px 14px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, #0E7490, #0B3B4F); border: 3px solid #22D3EE; box-shadow: 0 5px 0 #0E5266, inset 0 0 24px rgba(34, 211, 238, .25); color: #fff; }
+.g-compte-target small { font-size: 12px; opacity: .8; }
+.g-compte-target b { font-family: var(--title); font-size: 50px; line-height: 1; color: #A5F3FC; text-shadow: 0 0 14px rgba(34, 211, 238, .8); letter-spacing: 2px; animation: g-compte-pop .45s cubic-bezier(.3, 1.6, .5, 1); }
+.g-compte-target.letters b { font-size: 30px; }
+@keyframes g-compte-pop { from { transform: scale(.5); opacity: 0; } }
+.g-compte-side { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 92px; }
+.g-compte-clock { font-family: var(--title); font-size: 28px; line-height: 1.1; }
+.g-compte-clock.hurry { color: var(--red); animation: g-compte-blink .6s infinite alternate; }
+@keyframes g-compte-blink { to { opacity: .5; } }
+.g-compte-others { display: flex; flex-wrap: wrap; gap: 6px; }
+.g-compte-chip { font-size: 12.5px; min-height: 28px; padding: 3px 10px; }
+.g-compte-chip.done { border-color: var(--green); color: var(--green); }
+.g-compte-tiles, .g-compte-letters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.g-compte-letters { grid-template-columns: repeat(5, 1fr); }
+.g-compte-tile { min-height: 60px; border-radius: 16px; font-family: var(--title); font-size: 28px; background: var(--card); color: var(--txt); border: 2px solid var(--line); border-bottom-width: 5px;
+  transition: transform .12s, opacity .2s, background .2s; }
+.g-compte-tile.res { background: color-mix(in srgb, #06B6D4 18%, var(--card)); border-color: #06B6D4; }
+.g-compte-tile.sel { background: #06B6D4; color: #fff; border-color: #0E7490; transform: translateY(-3px); }
+.g-compte-tile.used { opacity: .25; transform: scale(.94); }
+.g-compte-tile.fresh { animation: g-compte-pop .35s cubic-bezier(.3, 1.6, .5, 1); }
+.g-compte-tile.hit { background: var(--green); color: #fff; border-color: #2F8A00; }
+.g-compte-tile.let { min-height: 54px; font-size: 26px; background: #FFF7D6; color: #3A2A00; border-color: #E8C34A; }
+.g-compte-tile:not(:disabled):active { transform: translateY(2px); border-bottom-width: 3px; }
+.g-compte-ops { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.g-compte-op { min-height: 54px; border-radius: 16px; font-size: 30px; font-weight: 800; color: #fff; background: #7C3AED; border: none; box-shadow: 0 4px 0 #5B21B6; transition: transform .12s; }
+.g-compte-op.on { background: #F59E0B; box-shadow: 0 4px 0 #B45309; transform: translateY(-2px); }
+.g-compte-op:disabled { opacity: .35; }
+.g-compte-steps { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; min-height: 30px; }
+.g-compte-steps .chip { font-weight: 700; color: var(--txt); }
+.g-compte-best { text-align: center; font-weight: 800; font-size: 17px; }
+.g-compte-best.hit { color: var(--green); }
+.g-compte-actions .btn { min-height: 52px; }
+.g-compte-word { display: flex; justify-content: center; gap: 4px; min-height: 52px; flex-wrap: wrap; }
+.g-compte-word span { width: 34px; height: 46px; display: grid; place-items: center; border-radius: 10px; background: #06B6D4; color: #fff; font-family: var(--title); font-size: 24px; animation: g-compte-pop .2s; }
+.g-compte-word span.ph { background: var(--card); color: var(--dim); border: 2px dashed var(--line); }
+.g-compte-res { display: flex; flex-direction: column; gap: 6px; }
+.g-compte-rrow { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 16px; background: var(--card); border: 2px solid var(--line); animation: g-compte-in .3s both; }
+.g-compte-rrow.me { border-color: #06B6D4; }
+.g-compte-rrow.win { background: color-mix(in srgb, var(--gold) 16%, var(--card)); border-color: var(--gold); }
+.g-compte-rrow b { color: var(--green); min-width: 36px; text-align: right; }
+.g-compte-what { font-weight: 700; }
+.g-compte-sol { display: flex; flex-direction: column; gap: 6px; align-items: center; padding: 10px; }
+@keyframes g-compte-in { from { transform: translateY(8px); opacity: 0; } }

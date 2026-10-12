@@ -1,0 +1,23 @@
+@import url("roles.css");
+.g-espion { max-width: 560px; margin: 0 auto; padding-bottom: 20px; }
+.g-espion-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 2px 4px 4px; }
+.g-espion-ph { font-family: var(--title); font-size: 19px; }
+.g-espion-news { display: flex; flex-direction: column; gap: 6px; margin: 6px 0; }
+.g-espion-news div { padding: 10px 12px; border-radius: 16px; background: color-mix(in srgb, var(--blue) 14%, var(--card)); border: 2px solid color-mix(in srgb, var(--blue) 40%, var(--line)); font-size: 14px; animation: g-rl-in .3s ease-out; }
+.g-espion .big { min-height: 56px; font-size: 17px; }
+.g-espion .btn.block { margin: 6px 0; }
+.g-espion-acts { margin: 8px 0; }
+.g-espion-q { padding: 14px; border-radius: 20px; background: color-mix(in srgb, var(--purple) 18%, var(--card)); border: 2px solid color-mix(in srgb, var(--purple) 45%, var(--line)); margin: 8px 0; animation: g-rl-in .3s ease-out; }
+.g-espion-qt { font-family: var(--title); font-size: 19px; line-height: 1.25; margin-top: 4px; }
+.g-espion-entry { margin: 10px 0; padding: 12px; border-radius: 20px; background: color-mix(in srgb, var(--green) 14%, var(--card)); border: 2px solid var(--green); display: flex; flex-direction: column; gap: 8px; animation: g-rl-in .25s ease-out; }
+.g-espion-etitle { font-family: var(--title); font-size: 16px; }
+.g-espion-erow { display: flex; gap: 8px; }
+.g-espion-erow .input { flex: 1; min-width: 0; }
+.g-espion-list { margin-top: 10px; }
+.g-espion-list summary { cursor: pointer; font-family: var(--title); font-size: 15px; padding: 8px 4px; color: var(--dim); }
+.g-espion-places { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; margin: 6px 0; }
+.g-espion-place { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 10px; border-radius: 14px; background: var(--card); border: 2px solid var(--line); color: var(--txt); font-size: 13px; font-weight: 700; text-align: left; transition: transform var(--t-fast), border-color var(--t-fast); }
+.g-espion-place span { font-size: 18px; }
+.g-espion-place:not(:disabled):hover { transform: translateY(-2px); border-color: var(--gold); }
+.g-espion-place:disabled { cursor: default; }
+.g-espion-place.here { border-color: var(--green); background: color-mix(in srgb, var(--green) 20%, var(--card)); }

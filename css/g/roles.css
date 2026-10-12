@@ -1,0 +1,69 @@
+/* Pièces communes des jeux de rôles cachés (js/games/lib/roles_view.js) :
+   importé par loupgarou.css, imposteur.css et espion.css */
+.g-rl-av { display: inline-grid; place-items: center; border-radius: 50%; overflow: hidden; flex: none; background: var(--card2); }
+.g-rl-av svg { width: 100%; height: 100%; display: block; }
+
+/* carte de rôle qui se retourne */
+.g-rl-card { display: block; width: min(300px, 86%); margin: 6px auto 12px; aspect-ratio: 5 / 6; perspective: 900px; border-radius: 24px; transition: width var(--t-mid), aspect-ratio var(--t-mid); }
+.g-rl-card.mini { width: min(260px, 74%); aspect-ratio: 5 / 3.4; }
+.g-rl-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .5s cubic-bezier(.3, 1.3, .5, 1); }
+.g-rl-card.open .g-rl-inner { transform: rotateY(180deg); }
+.g-rl-face { position: absolute; inset: 0; border-radius: 24px; backface-visibility: hidden; -webkit-backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 14px; color: #fff; text-align: center; box-shadow: 0 6px 0 rgba(0,0,0,.25), 0 14px 28px rgba(0,0,0,.3); overflow: hidden; }
+.g-rl-back { background: repeating-linear-gradient(45deg, rgba(255,255,255,.07) 0 10px, transparent 10px 20px), linear-gradient(150deg, #3B2A8C, #1B1446); border: 3px solid rgba(255,255,255,.5); }
+.g-rl-front { transform: rotateY(180deg); background: radial-gradient(circle at 50% 0%, rgba(255,255,255,.28), transparent 60%), var(--rc); border: 3px solid rgba(255,255,255,.6); }
+.g-rl-q { font-family: var(--title); font-size: 74px; line-height: 1; opacity: .9; animation: g-rl-pulse 1.8s ease-in-out infinite; }
+.g-rl-card.mini .g-rl-q { font-size: 44px; }
+@keyframes g-rl-pulse { 50% { transform: scale(1.12); } }
+.g-rl-tap { font-size: 12.5px; opacity: .85; }
+.g-rl-emo { font-size: 56px; line-height: 1; }
+.g-rl-card.mini .g-rl-emo { font-size: 32px; }
+.g-rl-title { font-family: var(--title); font-size: 26px; line-height: 1.1; }
+.g-rl-card.mini .g-rl-title { font-size: 20px; }
+.g-rl-sub { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: .85; }
+.g-rl-text { font-size: 13.5px; line-height: 1.3; max-height: 9em; overflow: auto; }
+.g-rl-card.mini .g-rl-text { font-size: 12px; max-height: 4.2em; }
+
+/* chronomètre */
+.g-rl-chrono { font-family: var(--title); font-size: 15px; padding: 4px 12px; border-radius: 99px; background: var(--card); border: 2px solid var(--line); color: var(--txt); white-space: nowrap; }
+.g-rl-chrono.warn { background: var(--red); border-color: var(--red-d); color: #fff; animation: g-rl-pulse 1s infinite; }
+
+/* bandeau de narration */
+.g-rl-banner { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-radius: 20px; background: var(--card); border: 2px solid var(--line); margin: 8px 0; animation: g-rl-in .3s ease-out; }
+.g-rl-banner.wolf { background: linear-gradient(135deg, #7F1D1D, #3B0A0A); border-color: #B91C1C; color: #fff; }
+.g-rl-banner.win { background: linear-gradient(135deg, #FFC800, #FF9600); border-color: #D6A500; color: #3A2600; }
+.g-rl-banner.bad { background: linear-gradient(135deg, #E5484D, #9B1C1F); border-color: #9B1C1F; color: #fff; }
+.g-rl-bemo { font-size: 34px; line-height: 1; flex: none; }
+.g-rl-btitle { font-family: var(--title); font-size: 18px; line-height: 1.15; }
+.g-rl-btext { font-size: 13.5px; opacity: .9; margin-top: 2px; }
+@keyframes g-rl-in { from { transform: translateY(8px); opacity: 0; } }
+.g-rl-sect { font-family: var(--title); font-size: 14px; color: var(--dim); margin: 12px 4px 6px; text-transform: uppercase; letter-spacing: .6px; }
+
+/* grille de joueurs */
+.g-rl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin: 6px 0; }
+.g-rl-pick { display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 92px; padding: 8px 4px; border-radius: 18px; background: var(--card); border: 2px solid var(--line); color: var(--txt); transition: transform var(--t-fast), border-color var(--t-fast); position: relative; }
+.g-rl-pick:not(:disabled):hover { transform: translateY(-2px); border-color: var(--blue); }
+.g-rl-pick:not(:disabled):active { transform: scale(.96); }
+.g-rl-pick:disabled { cursor: default; }
+.g-rl-pick.sel { border-color: var(--gold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 45%, transparent); }
+.g-rl-pick.dead { opacity: .5; filter: grayscale(.9); }
+.g-rl-pick.dead .g-rl-nm { text-decoration: line-through; }
+.g-rl-pick.spy { border-color: var(--red); }
+.g-rl-nm { font-weight: 800; font-size: 13px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-rl-sb { font-size: 11.5px; color: var(--dim); line-height: 1.1; text-align: center; }
+.g-rl-tag { font-size: 11px; padding: 1px 7px; border-radius: 99px; background: color-mix(in srgb, var(--blue) 25%, transparent); }
+
+/* fil de discussion */
+.g-rl-chat { margin-top: 12px; padding: 10px; border-radius: 20px; background: var(--card); border: 2px solid var(--line); }
+.g-rl-log { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; padding: 2px; scroll-behavior: smooth; }
+.g-rl-msg { font-size: 13.5px; line-height: 1.3; padding: 6px 10px; border-radius: 14px; background: var(--card2); align-self: flex-start; max-width: 92%; overflow-wrap: anywhere; animation: g-rl-in .2s ease-out; }
+.g-rl-msg b { margin-right: 6px; color: var(--blue); }
+.g-rl-msg.mine { align-self: flex-end; background: color-mix(in srgb, var(--green) 24%, var(--card2)); }
+.g-rl-msg.sys { align-self: center; background: transparent; color: var(--dim); font-style: italic; text-align: center; font-size: 12.5px; }
+.g-rl-msg.w { background: color-mix(in srgb, var(--red) 22%, var(--card2)); }
+.g-rl-msg.q b { color: var(--purple); } .g-rl-msg.a b { color: var(--green); }
+.g-rl-msg.clue { background: color-mix(in srgb, var(--purple) 22%, var(--card2)); }
+.g-rl-form { display: flex; gap: 8px; margin-top: 8px; }
+.g-rl-in { min-height: 46px; flex: 1; min-width: 0; }
+.g-rl-send { min-height: 46px; }
+.g-rl-hint { margin-top: 4px; text-align: center; }
+.g-rl-hint:empty { display: none; }

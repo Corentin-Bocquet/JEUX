@@ -1,0 +1,48 @@
+.g-petitbac { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; padding-bottom: 8px; }
+.g-petitbac-head { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-items: center; }
+.g-petitbac-letter { width: 72px; height: 72px; border-radius: 22px; display: grid; place-items: center; font-family: var(--title); font-size: 46px; color: #fff;
+  background: linear-gradient(150deg, #FBBF24, #F59E0B 55%, #D97706); box-shadow: 0 5px 0 #B45309, 0 10px 24px rgba(245, 158, 11, .35); grid-row: span 2; }
+.g-petitbac-letter.pop { animation: g-petitbac-pop .5s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes g-petitbac-pop { from { transform: scale(.4) rotate(-20deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.g-petitbac-info { display: flex; flex-direction: column; gap: 2px; }
+.g-petitbac-clock { font-family: var(--title); font-size: 26px; line-height: 1.1; }
+.g-petitbac-clock.stop { color: var(--red); animation: g-petitbac-blink .8s infinite alternate; }
+@keyframes g-petitbac-blink { to { opacity: .55; } }
+.g-petitbac-others { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; }
+.g-petitbac-chip { font-size: 12.5px; min-height: 28px; padding: 3px 10px; }
+.g-petitbac-chip.done { border-color: var(--green); color: var(--green); }
+.g-petitbac-grid { display: flex; flex-direction: column; gap: 8px; }
+.g-petitbac-cell { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px 10px; border-radius: 18px; background: var(--card); border: 2px solid var(--line); transition: border-color .2s, background .2s; }
+.g-petitbac-cell.ok { border-color: color-mix(in srgb, var(--green) 70%, var(--line)); }
+.g-petitbac-cell.bad { border-color: var(--red); background: color-mix(in srgb, var(--red) 10%, var(--card)); }
+.g-petitbac-cat { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--dim); }
+.g-petitbac-cat i { font-style: normal; font-size: 16px; }
+.g-petitbac-in { width: 100%; min-height: 46px; border-radius: 12px; border: 2px solid var(--line); background: var(--card2); color: var(--txt); padding: 0 12px; font-size: 18px; font-weight: 700; outline: none; }
+.g-petitbac-in:focus { border-color: #F59E0B; }
+.g-petitbac-in:disabled { opacity: .75; }
+.g-petitbac-foot { position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 8px; z-index: 2; padding: 8px 0 6px; background: linear-gradient(transparent, var(--bg) 22%); }
+.g-petitbac-foot .btn { min-height: 54px; font-size: 18px; }
+.g-petitbac-stop { animation: g-petitbac-pulse 1s infinite; }
+@keyframes g-petitbac-pulse { 50% { transform: scale(1.03); } }
+.g-petitbac-alert { background: color-mix(in srgb, var(--red) 18%, var(--card)); }
+.g-petitbac-votes { display: flex; flex-direction: column; gap: 8px; }
+.g-petitbac-vrow { display: flex; align-items: center; gap: 10px; padding: 10px 12px; animation: g-petitbac-in .3s both; }
+.g-petitbac-vrow .btn { min-height: 44px; }
+.g-petitbac-word { font-size: 20px; }
+@keyframes g-petitbac-in { from { transform: translateY(8px); opacity: 0; } }
+.g-petitbac-recap { display: flex; flex-direction: column; gap: 8px; }
+.g-petitbac-podium { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.g-petitbac-pp { display: flex; gap: 6px; align-items: center; padding: 6px 12px; border-radius: 14px; background: var(--card); border: 2px solid var(--line); font-size: 14px; }
+.g-petitbac-pp.me { border-color: #F59E0B; }
+.g-petitbac-pp b { color: #F59E0B; }
+.g-petitbac-rc { padding: 8px 10px; animation: g-petitbac-in .3s both; }
+.g-petitbac-ans { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.g-petitbac-a { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 10px; font-weight: 700; font-size: 14px; background: var(--card2); border: 2px solid var(--line); max-width: 100%; overflow-wrap: anywhere; }
+.g-petitbac-a small { font-weight: 400; color: var(--dim); font-size: 11px; }
+.g-petitbac-a b { color: var(--green); }
+.g-petitbac-a.ok { border-color: color-mix(in srgb, var(--green) 60%, var(--line)); }
+.g-petitbac-a.no { text-decoration: line-through; text-decoration-color: var(--red); border-color: color-mix(in srgb, var(--red) 55%, var(--line)); }
+.g-petitbac-a.no small { text-decoration: none; }
+.g-petitbac-a.empty { opacity: .5; }
+.g-petitbac-a.me { box-shadow: 0 0 0 2px #F59E0B inset; }
+@media (min-width: 700px) { .g-petitbac-grid { display: grid; grid-template-columns: 1fr 1fr; } }
